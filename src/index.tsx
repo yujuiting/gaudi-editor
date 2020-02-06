@@ -1,8 +1,17 @@
+import 'reflect-metadata';
+import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+
+import 'base/KeybindingService';
+import 'base/HistoryService';
+import 'editor/CurrentBlueprintService';
+import 'editor/ElementService';
+import 'editor/widget/WidgetRegistryService';
+import 'editor/widget/WidgetService';
+import 'editor/ManipulatorService';
 
 ReactDOM.render(<App />, document.getElementById('root'));
 
