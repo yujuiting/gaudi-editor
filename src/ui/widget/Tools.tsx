@@ -1,11 +1,11 @@
 import React, { createElement } from 'react';
-import { useService } from 'base/di';
 import {
   ToolWidgetGroup,
   WidgetRegistryService,
   ToolWidgetInfo,
 } from 'editor/widget/WidgetRegistryService';
-import { HToolGroup, VToolGroup } from 'editor/components/Toolbar';
+import { HToolGroup, VToolGroup } from 'ui/components/Toolbar';
+import { useMethod } from 'editor/di';
 
 export interface ToolbarProps {
   group: ToolWidgetGroup;
@@ -13,9 +13,9 @@ export interface ToolbarProps {
 }
 
 const Tools: React.FC<ToolbarProps> = ({ group, vertical }) => {
-  const registry = useService(WidgetRegistryService);
+  const getToolWidgets = useMethod(WidgetRegistryService, 'getToolWidgets');
 
-  const tools = registry.getToolWidgets(group);
+  const tools = getToolWidgets(group);
 
   function renderTool(tool: ToolWidgetInfo) {
     const key = tool.id;

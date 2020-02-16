@@ -1,14 +1,14 @@
+import Container from 'typedi';
 import React, { useCallback } from 'react';
 import { useObservable } from 'rxjs-hooks';
-import { useService } from 'base/di';
 import { WidgetType, ToolWidgetGroup, WidgetInfo } from 'editor/widget/WidgetRegistryService';
 import { WidgetService } from 'editor/widget/WidgetService';
-import { Tool } from 'editor/components/Toolbar';
-import { FolderOpen, Save, Copy, Paste, Layer, Extension, Redo, Undo } from 'base/components/icons';
+import { Tool } from 'ui/components/Toolbar';
+import { FolderOpen, Save, Copy, Paste, Layer, Extension, Redo, Undo } from 'ui/components/icons';
 
 const ComponentsAndHierarchyTool: React.FC = () => {
   const id = 'components-and-hierarchy-panel';
-  const widget = useService(WidgetService);
+  const widget = Container.get(WidgetService);
   const openedPanelId = useObservable(() => widget.openedPanelId$);
   const onClick = useCallback(() => widget.togglePanel(id), [widget]);
   return (
@@ -20,7 +20,7 @@ const ComponentsAndHierarchyTool: React.FC = () => {
 
 const ExtensionsTool: React.FC = () => {
   const id = 'extensions-panel';
-  const widget = useService(WidgetService);
+  const widget = Container.get(WidgetService);
   const openedPanelId = useObservable(() => widget.openedPanelId$);
   const onClick = useCallback(() => widget.togglePanel(id), [widget]);
   return (

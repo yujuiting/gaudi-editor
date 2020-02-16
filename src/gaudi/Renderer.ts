@@ -1,5 +1,5 @@
 import { forwardRef, createElement } from 'react';
-import { Template, Blueprint } from './Blueprint';
+import { Blueprint, Project } from './Blueprint';
 import { ComponentModule, ComponentType } from './ComponentModule';
 import { Container } from './Container';
 import { Plugins } from './Plugin';
@@ -13,84 +13,79 @@ const emptyComponentModule = {
 };
 
 export interface RenderingInfo {
-  // readonly id: string;
   readonly type: string;
-  readonly path: string;
   // belong to which component blueprint
   readonly scope: string;
   readonly depth: number;
   readonly parent: RenderingInfo | null;
   // is this rendering ref to another component blueprint
-  readonly refTemplate: string | undefined;
+  readonly refBlueprint: string | undefined;
+  readonly key: string;
 }
 
-const extractTemplateName = (text: string) => {
+const extractBlueprintName = (text: string) => {
   const matches = /template:(.+)/.exec(text);
   return matches && matches[1];
 };
 
 export class Renderer {
-  // private nextId = 0;
+  private nextId = 0;
 
   constructor(private container: Container<ComponentModule>, private plugins: Plugins) {}
 
   /**
    * @todo handle Container.loadAll with React.Suspense
    */
-  render(blueprint: Blueprint, templateName = blueprint.entry) {
-    const template = blueprint.templates[templateName];
-    if (!template) {
+  render(project: Project, blueprintName = project.entry) {
+    const blueprint = project.blueprints[blueprintName];
+    if (!blueprint) {
       throw new Error();
     }
-    return this.renderTemplate(template, blueprint.templates, templateName, '');
+    return this.renderBlueprint(blueprint, project.blueprints, blueprintName);
   }
 
-  private renderTemplate(
-    template: Template,
-    templates: Record<string, Template> = {},
+  private renderBlueprint(
+    blueprint: Blueprint,
+    blueprints: Record<string, Blueprint> = {},
     scope: string,
-    path: string,
     depth = 0,
     parent: RenderingInfo | null = null,
-    refTemplate?: string
+    refBlueprint?: string
   ): React.ReactElement {
-    const templateName = extractTemplateName(template.type);
+    const blueprintName = extractBlueprintName(blueprint.type);
 
-    if (templateName && templateName.length > 0) {
-      if (templateName in templates) {
-        const { [templateName]: target, ...rest } = templates;
-        return this.renderTemplate(target, rest, scope, path, depth, parent, templateName);
-      }
+    if (blueprintName && blueprintName in blueprints) {
+      const { [blueprintName]: target, ...rest } = blueprints;
+      return this.renderBlueprint(target, rest, scope, depth, parent, blueprintName);
     }
 
     const info: RenderingInfo = {
-      // id: `${this.nextId++}`,
-      type: template.type,
-      path,
+      type: blueprint.type,
       scope,
       depth,
       parent,
-      refTemplate,
+      refBlueprint,
+      key: `element-${this.nextId++}`,
     };
 
     let type: ComponentType<any> | string; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    if (isHtmlTag(template.type)) {
-      type = template.type;
+    if (isHtmlTag(blueprint.type)) {
+      type = blueprint.type;
     } else {
-      const componentModule = this.container.get(template.type) || emptyComponentModule;
+      const componentModule = this.container.get(blueprint.type) || emptyComponentModule;
       type = componentModule.default;
     }
 
-    let props = this.plugins.transformProps(template.props || {}, info, template);
+    let props = this.plugins.transformProps(blueprint.props || {}, info, blueprint);
 
-    props = { ...props, [componentTypeAttribute]: info.type };
+    props = { ...props, [componentTypeAttribute]: info.type, key: info.key };
 
     let element: React.ReactElement;
 
-    if (template.children && template.children.length > 0) {
-      const children = template.children.map((child, index) =>
-        this.renderTemplate(child, templates, scope, `${path}/${index}`, depth + 1, info)
+    if (blueprint.children && blueprint.children.length > 0) {
+      const children = blueprint.children.map(child =>
+        this.renderBlueprint(child, blueprints, scope, depth + 1, info)
       );
 
       element = createElement(type, props, children);
@@ -98,7 +93,7 @@ export class Renderer {
       element = createElement(type, props);
     }
 
-    element = this.plugins.postRender(element, info, template);
+    element = this.plugins.postRender(element, info, blueprint);
 
     return element;
   }

@@ -1,3 +1,4 @@
+import { FlattenInterpolation } from 'styled-components';
 import * as object from 'base/object';
 
 const builtInLength = [
@@ -21,24 +22,41 @@ const lengthRegexp = {
   vh: /^\d+vh$/,
   vw: /^\d+vw$/,
 };
-const lengthUnit = object.keys(lengthRegexp);
-export type LengthUnit = typeof lengthUnit[number];
+const lengthUnits = object.keys(lengthRegexp);
+export type LengthUnit = typeof lengthUnits[number];
+
+function isLength(value: string): boolean {
+  if (isLexicalLength(value)) return true;
+  for (const lengthUnit of lengthUnits) {
+    if (lengthRegexp[lengthUnit].test(value)) return true;
+  }
+  return false;
+}
 
 export function getLength(
   value?: string | number,
   unit: LengthUnit = 'px',
-  defaultValue: LexicalLength | number = 'initial'
+  defaultValue: LexicalLength | string | number = 'initial'
 ): string {
   switch (typeof value) {
     case 'number':
       return `${value}${unit}`;
     case 'string': {
-      if (isLexicalLength(value)) return value;
-      if (lengthRegexp[unit].test(value)) return value;
+      if (isLength(value)) return value;
       break;
     }
     default:
       break;
   }
   return getLength(defaultValue, unit);
+}
+
+export function ifDefined<T extends object, K extends keyof T>(
+  key: K,
+  fn: (props: T) => FlattenInterpolation<T>
+) {
+  return (props: T) => {
+    if (!props[key]) return;
+    return fn(props);
+  };
 }

@@ -1,5 +1,5 @@
-import styled, { css } from 'styled-components';
 import React, { useRef } from 'react';
+import styled, { css } from 'styled-components';
 import { createPortal } from 'react-dom';
 import { View, ViewProps } from './components';
 
@@ -16,6 +16,8 @@ const disablePointerEvent = (props: IframeProps) =>
 const Iframe = styled.iframe`
   border: none;
   background-color: white;
+  width: 100%;
+  height: 100%;
   ${disablePointerEvent}
 `;
 

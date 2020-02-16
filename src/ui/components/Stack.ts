@@ -1,5 +1,5 @@
 import styled, { css } from 'styled-components';
-import { getLength } from 'base/css';
+import { getLength, ifDefined } from 'base/css';
 
 export interface StackProps {
   grow?: number;
@@ -10,14 +10,27 @@ export interface StackProps {
 export const HStack = styled.div<StackProps>`
   position: relative;
   display: flex;
-  width: ${props => getLength(props.width, 'px')};
-  height: ${props => getLength(props.height, 'px')};
-  ${props =>
-    props.grow &&
-    css`
+  ${ifDefined(
+    'width',
+    props =>
+      css`
+        width: ${getLength(props.width, 'px')};
+      `
+  )}
+  ${ifDefined(
+    'height',
+    props =>
+      css`
+        height: ${getLength(props.height, 'px')};
+      `
+  )}
+  ${ifDefined(
+    'grow',
+    props => css`
       flex-grow: ${props.grow};
       overflow: hidden;
-    `}
+    `
+  )}
 `;
 
 export const VStack = styled(HStack)`

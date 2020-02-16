@@ -1,4 +1,5 @@
 import { Service } from 'typedi';
+import { Subject } from 'rxjs';
 import { isObject } from 'base/object';
 import { LoggerService, Logger } from 'base/LoggerService';
 
@@ -19,7 +20,11 @@ export function isDestroyable(value: unknown): value is Destroyable {
 }
 
 @Service()
-export class ServiceInitializerService {
+export class InitializerService {
+  get initialized$() {
+    return this.initialized.asObservable();
+  }
+
   private initializables = new Set<Initializable>();
 
   private destroyables = new Set<Destroyable>();
@@ -27,6 +32,8 @@ export class ServiceInitializerService {
   private labels = new WeakMap<Initializable | Destroyable, string>();
 
   private logger: Logger;
+
+  private initialized = new Subject<void>();
 
   constructor(logger: LoggerService) {
     this.logger = logger.create('ServiceInitializerService');
@@ -50,12 +57,28 @@ export class ServiceInitializerService {
       promises.push(this.initialize(initializable));
     }
     await Promise.all(promises);
+    this.initialized.next();
+  }
+
+  async destroyAll() {
+    const promises: unknown[] = [];
+    for (const destroyable of this.destroyables) {
+      promises.push(this.destroy(destroyable));
+    }
+    await Promise.all(promises);
   }
 
   private async initialize(service: Initializable) {
     const label = this.labels.get(service);
     if (label) this.logger.trace(`initializing ${label}`);
     await service.initialize();
+    if (label) this.logger.trace(`initializ ${label}`);
+  }
+
+  private async destroy(service: Destroyable) {
+    const label = this.labels.get(service);
+    if (label) this.logger.trace(`initializing ${label}`);
+    await service.destroy();
     if (label) this.logger.trace(`initializ ${label}`);
   }
 }

@@ -1,8 +1,8 @@
 import { Service } from 'typedi';
 import { createElement } from 'react';
 import { Gaudi, RenderingInfo, Plugin } from 'gaudi';
-import Fixture from 'editor/Fixture';
-import { MutableTemplate } from 'editor/TemplateService';
+import { MutableBlueprint } from 'editor/BlueprintService';
+import Scaffold from 'editor/Scaffold';
 
 @Service()
 export class EditorPlugin implements Plugin {
@@ -12,11 +12,11 @@ export class EditorPlugin implements Plugin {
     gaudi.plugins.providePlugin(this);
   }
 
-  postRender(element: React.ReactElement, info: RenderingInfo, template: MutableTemplate) {
-    if (info.refTemplate) {
+  postRender(element: React.ReactElement, info: RenderingInfo, blueprint: MutableBlueprint) {
+    if (info.refBlueprint) {
       return element;
     }
 
-    return createElement(Fixture, { info, template }, element);
+    return createElement(Scaffold, { info, blueprint, key: info.key }, element);
   }
 }

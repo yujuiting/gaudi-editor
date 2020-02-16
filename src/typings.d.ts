@@ -16,3 +16,7 @@ declare interface Window {
   ) => RequestIdleCallbackHandle;
   cancelIdleCallback: (handle: RequestIdleCallbackHandle) => void;
 }
+
+declare type Mutable<T> = {
+  -readonly [P in keyof T]: T[P];
+};

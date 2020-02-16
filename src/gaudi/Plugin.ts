@@ -1,16 +1,16 @@
 // import * as Immutable from 'immutable';
 import { RenderingInfo } from './Renderer';
 import { Container } from './Container';
-import { Template } from './Blueprint';
+import { Blueprint } from './Blueprint';
 
 export interface Plugin {
   readonly id: string;
   apply?(container: Container): void;
-  transformProps?(props: object, info: RenderingInfo, blueprint: Template): object;
+  transformProps?(props: object, info: RenderingInfo, blueprint: Blueprint): object;
   postRender?(
     element: React.ReactElement,
     info: RenderingInfo,
-    template: Template
+    blueprint: Blueprint
   ): React.ReactElement;
 }
 
@@ -26,17 +26,17 @@ export class Plugins implements Plugin {
 
   constructor(private container: Container) {}
 
-  transformProps(props: object, info: RenderingInfo, template: Template) {
+  transformProps(props: object, info: RenderingInfo, template: Blueprint) {
     return this.plugins.reduce((outProps, plugin) => {
       if (!plugin.transformProps) return outProps;
       return plugin.transformProps(outProps, info, template);
     }, props);
   }
 
-  postRender(element: React.ReactElement, info: RenderingInfo, template: Template) {
+  postRender(element: React.ReactElement, info: RenderingInfo, blueprint: Blueprint) {
     return this.plugins.reduce((outElement, plugin) => {
       if (!plugin.postRender) return outElement;
-      return plugin.postRender(outElement, info, template);
+      return plugin.postRender(outElement, info, blueprint);
     }, element);
   }
 

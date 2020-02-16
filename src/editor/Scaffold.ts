@@ -1,31 +1,26 @@
 import { Children, isValidElement, cloneElement, useRef, useEffect } from 'react';
 import { RenderingInfo } from 'gaudi';
-import { useService } from 'base/di';
+import { MutableBlueprint } from 'editor/BlueprintService';
 import { RenderedObjectService } from 'editor/RenderedObjectService';
-import { MutableTemplate } from 'editor/TemplateService';
+import { useMethod } from 'editor/di';
 
 export interface ScaffoldProps {
   info: RenderingInfo;
-  template: MutableTemplate;
+  blueprint: MutableBlueprint;
 }
 
-const Fixture: React.FC<ScaffoldProps> = ({ children, info, template }) => {
+const Scaffold: React.FC<ScaffoldProps> = ({ children, info, blueprint }) => {
   const child = Children.only(children);
 
-  const renderedObject = useService(RenderedObjectService);
+  const add = useMethod(RenderedObjectService, 'add');
 
   const ref = useRef<HTMLElement>();
 
-  useEffect(() => renderedObject.add(template.id, info, ref), [
-    renderedObject,
-    template,
-    info,
-    ref,
-  ]);
+  useEffect(() => add(blueprint.id, info, ref), [add, blueprint, info, ref]);
 
   if (!isValidElement(child)) return null;
 
   return cloneElement(child, { ref });
 };
 
-export default Fixture;
+export default Scaffold;

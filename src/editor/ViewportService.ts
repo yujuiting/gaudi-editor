@@ -1,7 +1,7 @@
 import { Service } from 'typedi';
 import { fromEvent, BehaviorSubject, Subscription, Subject } from 'rxjs';
 import { takeUntil, switchMap, map } from 'rxjs/operators';
-import { Destroyable, ServiceInitializerService } from 'base/LifeCycle';
+import { Destroyable, InitializerService } from 'base/LifeCycle';
 import { getRect } from 'base/dom';
 import { Vector, Size, clamp, fixPrecision } from 'base/math';
 import { KeybindingService } from 'base/KeybindingService';
@@ -147,7 +147,7 @@ export class ViewportService implements Destroyable {
   constructor(
     keybindingService: KeybindingService,
     logger: LoggerService,
-    serviceInitializer: ServiceInitializerService,
+    initializer: InitializerService,
     private rectTracker: RectTrackerService
   ) {
     this.logger = logger.create('ViewportService');
@@ -166,7 +166,7 @@ export class ViewportService implements Destroyable {
       onLeave: () => this.setControlState(ControlState.Default),
     });
 
-    serviceInitializer.register(this);
+    initializer.register(this);
   }
 
   destroy() {

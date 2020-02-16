@@ -3,6 +3,7 @@ import 'styled-components';
 const theme = {
   'app.background': '#5e5e5e',
   'viewport.background': '#282828',
+  'viewport.hover.color': 'cyan',
   'canvas.grid.color': '#666666',
   'toolbar.background': '#535353',
   'toolbar.divider.color': '#3e3e3e',

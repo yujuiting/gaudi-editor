@@ -2,13 +2,14 @@ import { Service } from 'typedi';
 import { Subscription, combineLatest } from 'rxjs';
 import { distinctUntilChanged, debounceTime, throttleTime, map } from 'rxjs/operators';
 import { RenderingInfo } from 'gaudi';
-import { Initializable, Destroyable } from 'base/LifeCycle';
+import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { Rect, Vector, Size } from 'base/math';
 import { QuadTree } from 'base/QuadTree';
 import { getRect as getRectFromHTMLElement } from 'base/dom';
 import { LoggerService, Logger } from 'base/LoggerService';
 import { RectTrackerService, RectChangedEvent } from 'base/RectTrackerService';
-import { ViewportService } from 'editor/viewport/ViewportService';
+import { ViewportService } from 'editor/ViewportService';
+import { ViewService } from 'editor/ViewService';
 
 export interface RenderedObject {
   id: string;
@@ -48,10 +49,13 @@ export class RenderedObjectService implements Initializable, Destroyable {
   constructor(
     private rectTracker: RectTrackerService,
     private viewport: ViewportService,
-    logger: LoggerService
+    private view: ViewService,
+    logger: LoggerService,
+    initializer: InitializerService
   ) {
     this.tree = buildTree(Size.zero, this.renderedObjects);
-    this.logger = logger.create('ViewElementService');
+    this.logger = logger.create('RenderedObjectService');
+    initializer.register(this);
   }
 
   initialize() {
@@ -65,7 +69,7 @@ export class RenderedObjectService implements Initializable, Destroyable {
         .subscribe(this.onVisibleRectChanged.bind(this)),
       this.viewport.canvasSize$
         .pipe(debounceTime(100), distinctUntilChanged(Size.eq))
-        .subscribe(this.onCanvasSizeChanged.bind(this)),
+        .subscribe(this.rebuildTree.bind(this)),
       this.rectTracker.rectChanged$.subscribe(this.onRectChanged.bind(this))
     );
   }
@@ -83,12 +87,20 @@ export class RenderedObjectService implements Initializable, Destroyable {
     const renderedObject: RenderedObject = { id, info, ref, rect: Rect.zero };
     this.renderedObjects.set(id, renderedObject);
     if (info.depth === 0) this.rootRenderedObjects.add(renderedObject);
+    this.tree.insert(renderedObject);
+    /**
+     * @FIXME bulk update
+     */
+    this.trackingVisibles();
     return () => this.remove(id);
   }
 
   remove(id: string) {
     const renderedObject = this.renderedObjects.get(id);
-    if (renderedObject) this.rootRenderedObjects.delete(renderedObject);
+    if (renderedObject) {
+      this.rootRenderedObjects.delete(renderedObject);
+      this.tree.delete(renderedObject);
+    }
     this.renderedObjects.delete(id);
     this.rectTracker.untrack(id);
   }
@@ -133,34 +145,44 @@ export class RenderedObjectService implements Initializable, Destroyable {
 
   private trackingVisibles() {
     const visibles = this.tree.findIn(this.visibleRect);
-    for (const [id, viewElement] of this.renderedObjects) {
+
+    for (const [id, renderedObject] of this.renderedObjects) {
       // only tracking elements that visible, rendered and belong to current scope
-      if (visibles.has(viewElement) && viewElement.ref) {
-        this.rectTracker.track(id, () =>
-          viewElement.ref.current ? getRectFromHTMLElement(viewElement.ref.current) : Rect.zero
-        );
+      if (visibles.has(renderedObject) && renderedObject.ref) {
+        this.rectTracker.track(id, () => {
+          if (!renderedObject.ref.current) return Rect.zero;
+          const localRect = getRectFromHTMLElement(renderedObject.ref.current);
+          const globalPosition = this.view.localToGlobal(
+            renderedObject.info.scope,
+            localRect.position
+          );
+          return Rect.of(globalPosition, localRect.size);
+        });
       } else {
         this.rectTracker.untrack(id);
       }
     }
+
+    this.logger.trace('tracking visibles', { count: visibles.size });
   }
 
   private onVisibleRectChanged(rect: Rect) {
     const buffer = rect.size.mul(0.2);
     const pos = rect.position.sub(buffer.width, buffer.height);
     const size = rect.size.add(buffer);
+    this.logger.trace('on visible rect changed', { pos, size });
     this.visibleRect = Rect.of(pos, size);
     this.trackingVisibles();
   }
 
-  private onCanvasSizeChanged(size: Size) {
+  private rebuildTree(size: Size) {
     this.tree = buildTree(size, this.renderedObjects);
+    this.logger.trace('tree rebuilt');
   }
 
   private onRectChanged({ id, rect }: RectChangedEvent) {
     const element = this.renderedObjects.get(id as string);
     if (!element) {
-      this.logger.warn('not found view element', { id });
       return;
     }
 
@@ -172,12 +194,13 @@ export class RenderedObjectService implements Initializable, Destroyable {
     }
 
     // offset to canvas coordinate
-    const posInCanvas = this.viewport.pageToCanvasPoint(rect.position);
-    element.rect = Rect.of(posInCanvas, rect.size);
+    // const posInCanvas = this.viewport.pageToCanvasPoint(rect.position);
+    // element.rect = Rect.of(posInCanvas, rect.size);
+    element.rect = rect;
     this.tree.insert(element);
 
     if (element.info.depth === 0) {
-      this.updateCanvasSize();
+      // this.updateCanvasSize();
     }
   }
 }

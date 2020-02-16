@@ -31,7 +31,7 @@ export interface Logger {
 }
 
 const format = ({ level, scope, message, extra }: LogMessage) =>
-  `[${scope}][${level}] ${message} ${extra ? extra : ''}`;
+  `[${scope}][${level}] ${message} ${extra ? JSON.stringify(extra) : ''}`;
 
 @Service()
 export class LoggerService {

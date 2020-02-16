@@ -1,7 +1,7 @@
 import { Service } from 'typedi';
 import { Subject } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { Initializable, Destroyable, ServiceInitializerService } from 'base/LifeCycle';
+import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { Rect } from 'base/math';
 import { LoggerService, Logger } from 'base/LoggerService';
 
@@ -36,10 +36,10 @@ export class RectTrackerService implements Initializable, Destroyable {
 
   private logger: Logger;
 
-  constructor(logger: LoggerService, serviceInitializer: ServiceInitializerService) {
+  constructor(logger: LoggerService, initializer: InitializerService) {
     this.logger = logger.create('RectTracker');
     this.updateAll = this.updateAll.bind(this);
-    serviceInitializer.register(this);
+    initializer.register(this);
   }
 
   initialize() {

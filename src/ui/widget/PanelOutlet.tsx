@@ -1,12 +1,12 @@
 import React, { createElement } from 'react';
 import { useObservable } from 'rxjs-hooks';
-import { useService } from 'base/di';
 import { WidgetService } from 'editor/widget/WidgetService';
+import { useProperty } from 'editor/di';
 
 const PanelOutlet: React.FC = () => {
-  const widget = useService(WidgetService);
+  const openedPanel$ = useProperty(WidgetService, 'openedPanel$');
 
-  const panel = useObservable(() => widget.openedPanel$);
+  const panel = useObservable(() => openedPanel$);
 
   if (!panel) return null;
 
