@@ -1,50 +1,88 @@
 import { Service } from 'typedi';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { LoggerService, Logger } from 'base/LoggerService';
-import { WidgetRegistryService, PanelWidgetInfo } from 'editor/widget/WidgetRegistryService';
-import { map } from 'rxjs/operators';
+import {
+  AnyWidget,
+  IconWidget,
+  PanelWidget,
+  PropsWidget,
+  StylesWidget,
+  WidgetType,
+} from 'editor/widget/type';
 
 @Service()
 export class WidgetService {
-  readonly openedPanel$: Observable<PanelWidgetInfo | null>;
+  private iconWidgets = new Map<string, IconWidget>();
+  private panelWidgets = new Map<string, PanelWidget>();
+  private propsWidgets = new Map<string, PropsWidget>();
+  private stylesWidgets = new Map<string, StylesWidget>();
 
-  readonly openedPanelId$: Observable<string | null>;
-
-  private openedPanel = new BehaviorSubject<PanelWidgetInfo | null>(null);
-
-  private logger: Logger;
-
-  constructor(private registry: WidgetRegistryService, logger: LoggerService) {
-    this.openedPanel$ = this.openedPanel.asObservable();
-    this.openedPanelId$ = this.openedPanel$.pipe(map(info => (info ? info.id : null)));
-    this.logger = logger.create('WidgetService');
+  register(widget: AnyWidget) {
+    switch (widget.type) {
+      case WidgetType.Icon:
+        this.registerIconWidget(widget);
+        break;
+      case WidgetType.Panel:
+        this.registerPanelWidget(widget);
+        break;
+      case WidgetType.Props:
+        this.registerPropsWidget(widget);
+        break;
+      case WidgetType.Styles:
+        this.registerStylesWidget(widget);
+        break;
+    }
   }
 
-  openPanel(id: string) {
-    const widget = this.registry.getPanelWidget(id);
-    if (!widget) {
-      this.logger.error(`not found panel: ${id}`);
-      return;
+  registerAll(widgets: AnyWidget[]) {
+    for (const widget of widgets) {
+      this.register(widget);
     }
-
-    this.openedPanel.next(widget);
   }
 
-  closePanel() {
-    this.openedPanel.next(null);
+  registerIconWidget(widget: IconWidget) {
+    this.iconWidgets.set(widget.id, widget);
   }
 
-  togglePanel(id: string) {
-    const widget = this.registry.getPanelWidget(id);
-    if (!widget) {
-      this.logger.error(`not found panel: ${id}`);
-      return;
-    }
+  registerPanelWidget(widget: PanelWidget) {
+    this.panelWidgets.set(widget.id, widget);
+  }
 
-    if (this.openedPanel.value === widget) {
-      this.closePanel();
-    } else {
-      this.openPanel(id);
-    }
+  registerPropsWidget(widget: PropsWidget) {
+    this.propsWidgets.set(widget.id, widget);
+  }
+
+  registerStylesWidget(widget: StylesWidget) {
+    this.stylesWidgets.set(widget.id, widget);
+  }
+
+  getIconWidgets() {
+    return Array.from(this.iconWidgets.values());
+  }
+
+  getIconWidget(id: string) {
+    return this.iconWidgets.get(id);
+  }
+
+  getPanelWidgets() {
+    return Array.from(this.panelWidgets.values());
+  }
+
+  getPanelWidget(id: string) {
+    return this.panelWidgets.get(id);
+  }
+
+  getPropsWidgets() {
+    return Array.from(this.propsWidgets.values());
+  }
+
+  getPropsWidget(id: string) {
+    return this.propsWidgets.get(id);
+  }
+
+  getStylesWidgets() {
+    return Array.from(this.stylesWidgets.values());
+  }
+
+  getStylesWidget(id: string) {
+    return this.stylesWidgets.get(id);
   }
 }

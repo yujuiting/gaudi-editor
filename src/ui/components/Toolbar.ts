@@ -15,6 +15,7 @@ import { VStack, HStack } from './Stack';
 
 export interface ToolProps {
   active?: boolean;
+  size?: 'small' | 'large';
 }
 
 const toolActiveStyle = css`
@@ -22,6 +23,9 @@ const toolActiveStyle = css`
 `;
 
 export const Tool = styled.button<ToolProps>`
+  width: ${theme.options('size', 'toolbar.size', '16px')};
+  height: ${theme.options('size', 'toolbar.size', '16px')};
+  box-sizing: content-box;
   border: none;
   background: inherit;
   color: inherit;
@@ -30,6 +34,11 @@ export const Tool = styled.button<ToolProps>`
 
   :not(:disabled) {
     cursor: pointer;
+  }
+
+  > svg {
+    width: 100%;
+    height: 100%;
   }
 
   ${props => props.active && toolActiveStyle}

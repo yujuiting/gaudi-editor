@@ -7,6 +7,8 @@ const theme = {
   'canvas.grid.color': '#666666',
   'toolbar.background': '#535353',
   'toolbar.divider.color': '#3e3e3e',
+  'toolbar.size.small': '16px',
+  'toolbar.size.large': '24px',
   'color.primary': '#007bff',
   'color.warning': '#dc3545',
   'color.danger': '#ffc107',
@@ -16,6 +18,7 @@ const theme = {
   'fontSize.small': '0.6rem',
   'fontSize.normal': '1rem',
   'fontSize.large': '1.4rem',
+  'info-panel.width': '320px',
 };
 
 type Theme = typeof theme;

@@ -1,13 +1,13 @@
 import styled, { css } from 'styled-components';
 import { getLength, ifDefined } from 'base/css';
 
-export interface StackProps {
+export interface Props {
   grow?: number;
   height?: string | number;
   width?: string | number;
 }
 
-export const HStack = styled.div<StackProps>`
+export const HStack = styled.div<Props>`
   position: relative;
   display: flex;
   ${ifDefined(

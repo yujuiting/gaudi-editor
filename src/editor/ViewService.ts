@@ -1,6 +1,5 @@
 import { Service } from 'typedi';
 import { Rect, Size, Vector } from 'base/math';
-import { ViewportService } from 'editor/ViewportService';
 
 export interface View {
   rootName: string;
@@ -14,8 +13,6 @@ const viewGap = 32;
 @Service()
 export class ViewService {
   private views: View[] = [];
-
-  constructor(private viewport: ViewportService) {}
 
   create(rootName: string) {
     const rect = Rect.of(this.getNextViewLocation(), defaultViewSize);

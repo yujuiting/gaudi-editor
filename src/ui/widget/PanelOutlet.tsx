@@ -1,16 +1,18 @@
 import React, { createElement } from 'react';
-import { useObservable } from 'rxjs-hooks';
-import { WidgetService } from 'editor/widget/WidgetService';
-import { useProperty } from 'editor/di';
+import { PanelService } from 'editor/widget/PanelService';
+import { useProperty$, useMethod } from 'editor/di';
 
 const PanelOutlet: React.FC = () => {
-  const openedPanel$ = useProperty(WidgetService, 'openedPanel$');
+  // to trigger update
+  useProperty$(PanelService, 'openedId$');
 
-  const panel = useObservable(() => openedPanel$);
+  const getOpenedPanel = useMethod(PanelService, 'getOpenedPanel');
+
+  const panel = getOpenedPanel();
 
   if (!panel) return null;
 
-  return createElement(panel.render);
+  return createElement(panel.renderPanel);
 };
 
 export default PanelOutlet;

@@ -4,7 +4,8 @@ import { Container, ObjectType } from 'typedi';
 import { Observable } from 'rxjs';
 import { useObservable } from 'rxjs-hooks';
 import { Gaudi } from 'gaudi';
-import { useMethod as useInstanceMethod, ExtractTypeOf, ExcludeTypeOf } from 'base/hooks';
+import { ExtractTypeOf, ExcludeTypeOf } from 'base/type';
+import { useMethod as useInstanceMethod } from 'base/hooks';
 
 import { KeybindingService } from 'base/KeybindingService';
 import { HistoryService } from 'base/HistoryService';
@@ -13,8 +14,8 @@ import { BlueprintService } from 'editor/BlueprintService';
 import { OperatorService } from 'editor/OperatorService';
 import { RendererService } from 'editor/RendererService';
 import { RenderedObjectService } from 'editor/RenderedObjectService';
-import { WidgetRegistryService } from 'editor/widget/WidgetRegistryService';
 import { WidgetService } from 'editor/widget/WidgetService';
+import { PanelService } from 'editor/widget/PanelService';
 import { EditorPlugin } from 'editor/EditorPlugin';
 import { ViewService } from 'editor/ViewService';
 
@@ -28,8 +29,8 @@ Container.get(BlueprintService);
 Container.get(OperatorService);
 Container.get(RendererService);
 Container.get(RenderedObjectService);
-Container.get(WidgetRegistryService);
 Container.get(WidgetService);
+Container.get(PanelService);
 Container.get(EditorPlugin);
 Container.get(ViewService);
 

@@ -1,127 +1,65 @@
-import Container from 'typedi';
-import React, { useCallback } from 'react';
-import { useObservable } from 'rxjs-hooks';
-import { WidgetType, ToolWidgetGroup, WidgetInfo } from 'editor/widget/WidgetRegistryService';
-import { WidgetService } from 'editor/widget/WidgetService';
-import { Tool } from 'ui/components/Toolbar';
+import React from 'react';
+import { WidgetType, AnyWidget } from 'editor/widget/type';
 import { FolderOpen, Save, Copy, Paste, Layer, Extension, Redo, Undo } from 'ui/components/icons';
 
-const ComponentsAndHierarchyTool: React.FC = () => {
-  const id = 'components-and-hierarchy-panel';
-  const widget = Container.get(WidgetService);
-  const openedPanelId = useObservable(() => widget.openedPanelId$);
-  const onClick = useCallback(() => widget.togglePanel(id), [widget]);
-  return (
-    <Tool active={openedPanelId === id} onClick={onClick}>
-      <Layer size={24} title="Component &Hierarchy" />
-    </Tool>
-  );
-};
-
-const ExtensionsTool: React.FC = () => {
-  const id = 'extensions-panel';
-  const widget = Container.get(WidgetService);
-  const openedPanelId = useObservable(() => widget.openedPanelId$);
-  const onClick = useCallback(() => widget.togglePanel(id), [widget]);
-  return (
-    <Tool active={openedPanelId === id} onClick={onClick}>
-      <Extension size={24} title="Extensions" />
-    </Tool>
-  );
-};
-
-const widgets: WidgetInfo[] = [
+const widgets: AnyWidget[] = [
   {
-    type: WidgetType.Tool,
-    id: 'open-tool',
-    group: ToolWidgetGroup.File,
+    type: WidgetType.Icon,
+    id: 'open',
+    group: 'topbar.file',
     // eslint-disable-next-line react/display-name
-    render: () => (
-      <Tool>
-        <FolderOpen size={16} title="Open" />
-      </Tool>
-    ),
+    render: () => <FolderOpen title="Open" />,
   },
   {
-    type: WidgetType.Tool,
-    id: 'save-tool',
-    group: ToolWidgetGroup.File,
+    type: WidgetType.Icon,
+    id: 'save',
+    group: 'topbar.file',
     // eslint-disable-next-line react/display-name
-    render: () => (
-      <Tool>
-        <Save size={16} title="Save" />
-      </Tool>
-    ),
+    render: () => <Save title="Save" />,
   },
   {
-    type: WidgetType.Tool,
-    id: 'copy-tool',
-    group: ToolWidgetGroup.Edit,
+    type: WidgetType.Icon,
+    id: 'copy',
+    group: 'topbar.edit',
     // eslint-disable-next-line react/display-name
-    render: () => (
-      <Tool>
-        <Copy size={16} title="Copy" />
-      </Tool>
-    ),
+    render: () => <Copy title="Copy" />,
   },
   {
-    type: WidgetType.Tool,
-    id: 'paste-tool',
-    group: ToolWidgetGroup.Edit,
+    type: WidgetType.Icon,
+    id: 'paste',
+    group: 'topbar.edit',
     // eslint-disable-next-line react/display-name
-    render: () => (
-      <Tool>
-        <Paste size={16} title="Paste" />
-      </Tool>
-    ),
+    render: () => <Paste title="Paste" />,
   },
   {
-    type: WidgetType.Tool,
-    id: 'undo-tool',
-    group: ToolWidgetGroup.Edit,
+    type: WidgetType.Icon,
+    id: 'undo',
+    group: 'topbar.edit',
     // eslint-disable-next-line react/display-name
-    render: () => (
-      <Tool>
-        <Undo size={16} title="Undo" />
-      </Tool>
-    ),
+    render: () => <Undo title="Undo" />,
   },
   {
-    type: WidgetType.Tool,
-    id: 'redo-tool',
-    group: ToolWidgetGroup.Edit,
+    type: WidgetType.Icon,
+    id: 'redo',
+    group: 'topbar.edit',
     // eslint-disable-next-line react/display-name
-    render: () => (
-      <Tool>
-        <Redo size={16} title="Redo" />
-      </Tool>
-    ),
-  },
-  {
-    type: WidgetType.Tool,
-    id: 'components-and-hierarchy-tool',
-    group: ToolWidgetGroup.Panel,
-    // eslint-disable-next-line react/display-name
-    render: ComponentsAndHierarchyTool,
-  },
-  {
-    type: WidgetType.Tool,
-    id: 'extensions-tool',
-    group: ToolWidgetGroup.Panel,
-    // eslint-disable-next-line react/display-name
-    render: ExtensionsTool,
+    render: () => <Redo title="Redo" />,
   },
   {
     type: WidgetType.Panel,
-    id: 'components-and-hierarchy-panel',
+    id: 'components-and-hierarchy',
     // eslint-disable-next-line react/display-name
-    render: () => <div>Component & Hierarchy</div>,
+    renderIcon: () => <Layer title="Component &Hierarchy" />,
+    // eslint-disable-next-line react/display-name
+    renderPanel: () => <div>Component & Hierarchy</div>,
   },
   {
     type: WidgetType.Panel,
-    id: 'extensions-panel',
+    id: 'extensions',
     // eslint-disable-next-line react/display-name
-    render: () => <div>Extensions</div>,
+    renderIcon: () => <Extension title="Extensions" />,
+    // eslint-disable-next-line react/display-name
+    renderPanel: () => <div>Extensions</div>,
   },
 ];
 

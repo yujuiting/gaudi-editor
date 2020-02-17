@@ -1,5 +1,5 @@
 import React from 'react';
-import { ThemeProvider } from 'styled-components';
+import { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { Normalize } from 'styled-normalize';
 import AppRoot from 'ui/components/AppRoot';
 import { VStack, HStack } from 'ui/components/Stack';
@@ -7,30 +7,40 @@ import { HToolbar } from 'ui/components/Toolbar';
 import Viewport from 'ui/viewport/Viewport';
 import SelectViewportScale from 'ui/viewport/SelectViewportScale';
 import CursorLocation from 'ui/viewport/CursorLocation';
-import Tools from 'ui/widget/Tools';
+import ToolBar from 'ui/widget/ToolBar';
+import PanelBar from 'ui/widget/PanelBar';
 import PanelOutlet from 'ui/widget/PanelOutlet';
+import InfoPanel from 'ui/widget/InfoPanel';
 import theme from './theme';
 
-import { ToolWidgetGroup } from 'editor/widget/WidgetRegistryService';
+const GlobalStyle = createGlobalStyle`
+  html, body {
+    font-size: 12px;
+  }
+`;
 
 const App: React.FC = () => (
   <ThemeProvider theme={theme}>
     <Normalize />
+    <GlobalStyle />
     <AppRoot>
       <VStack height="100%">
         <HToolbar>
-          <Tools group={ToolWidgetGroup.File} />
-          <Tools group={ToolWidgetGroup.Edit} />
+          <ToolBar group="topbar.file" />
+          <ToolBar group="topbar.edit" />
         </HToolbar>
         <HStack grow={1}>
           <VStack>
-            <Tools group={ToolWidgetGroup.Panel} vertical />
+            <PanelBar />
           </VStack>
           <VStack>
             <PanelOutlet />
           </VStack>
           <VStack grow={1}>
             <Viewport />
+          </VStack>
+          <VStack>
+            <InfoPanel />
           </VStack>
         </HStack>
         <HStack>

@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom';
 import { Container } from 'typedi';
 import { InitializerService } from 'base/LifeCycle';
 import { KeyboardService } from 'base/KeyboardService';
-import { WidgetRegistryService } from 'editor/widget/WidgetRegistryService';
+import { WidgetService } from 'editor/widget/WidgetService';
 import { ProjectService } from 'editor/ProjectService';
 import widgets from './widgets';
 import App from './App';
@@ -18,14 +18,14 @@ serviceWorker.unregister();
 
 const initializer = Container.get(InitializerService);
 const keyboard = Container.get(KeyboardService);
-const widgetRegistry = Container.get(WidgetRegistryService);
+const widget = Container.get(WidgetService);
 const project = Container.get(ProjectService);
 
 keyboard.bind(window);
 
 (async () => {
   await initializer.initializeAll();
-  widgetRegistry.register(...widgets);
+  widget.registerAll(widgets);
   project.setCurrent({
     blueprints: {
       default: {
