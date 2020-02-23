@@ -18,7 +18,7 @@ const PanelTool: React.FC<PanelToolProps> = props => {
   const toggleThis = useCallback(() => toggle(id), [toggle, id]);
 
   return (
-    <Tool key={id} active={active} onClick={toggleThis} size="large">
+    <Tool active={active} onClick={toggleThis} size="large">
       {children}
     </Tool>
   );
@@ -31,7 +31,7 @@ const PanelBar: React.FC = () => {
 
   function renderTool(panel: PanelWidget) {
     return (
-      <PanelTool active={opened === panel.id} id={panel.id}>
+      <PanelTool active={opened === panel.id} id={panel.id} key={panel.id}>
         {createElement(panel.renderIcon)}
       </PanelTool>
     );

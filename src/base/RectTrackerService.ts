@@ -83,6 +83,12 @@ export class RectTrackerService implements Initializable, Destroyable {
     this.trackings.delete(id);
   }
 
+  forceUpdate(id: unknown) {
+    const trackingData = this.trackings.get(id);
+    if (!trackingData) return;
+    this.update(id, trackingData);
+  }
+
   private changeRect(id: unknown, trackingData: TrackingData, rect: Rect) {
     const prevRect = trackingData.prevRect;
     this.rectChanged.next({ id, rect, prevRect });

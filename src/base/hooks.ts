@@ -14,3 +14,15 @@ export function useMethod<T, K extends ExtractTypeOf<T, Function>>(
   const method: Function = service[methodName];
   return useCallback<T[K]>(method.bind(service), [service, method]);
 }
+
+export function useDebounce(fn: Function, timeout = 0) {
+  const timer = useRef(0);
+
+  return useCallback(
+    (...args: unknown[]) => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => fn(...args), timeout);
+    },
+    [fn, timer, timeout]
+  );
+}

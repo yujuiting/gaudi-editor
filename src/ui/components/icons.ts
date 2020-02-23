@@ -18,3 +18,5 @@ export { VerticalAlignTop } from 'styled-icons/material/VerticalAlignTop';
 
 export { Info } from 'styled-icons/material/Info';
 export { Style } from 'styled-icons/material/Style';
+
+export { History } from 'styled-icons/material/History';

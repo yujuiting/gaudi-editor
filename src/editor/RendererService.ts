@@ -1,10 +1,11 @@
 import { Service } from 'typedi';
-import { Subscription, merge, Subject } from 'rxjs';
+import { Subscription, Subject } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import { Gaudi } from 'gaudi';
 import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
+import { LoggerService, Logger } from 'base/LoggerService';
 import { ProjectService } from 'editor/ProjectService';
-import { BlueprintService } from 'editor/BlueprintService';
-import { filter, map } from 'rxjs/operators';
+import { BlueprintService, BlueprintUpdatedEvent } from 'editor/BlueprintService';
 
 @Service()
 export class RendererService implements Initializable, Destroyable {
@@ -14,22 +15,21 @@ export class RendererService implements Initializable, Destroyable {
 
   private updatedElement = new Subject<string>();
 
+  private logger: Logger;
+
   constructor(
     private guaid: Gaudi,
     private project: ProjectService,
     private blueprint: BlueprintService,
-    initializer: InitializerService
+    initializer: InitializerService,
+    logger: LoggerService
   ) {
     initializer.register(this);
+    this.logger = logger.create('RendererService');
   }
 
   initialize() {
-    this.subscriptions.push(
-      merge(this.blueprint.createdRootName$, this.blueprint.updatedRootName$).subscribe(
-        this.render.bind(this)
-      ),
-      this.blueprint.destroyRootName$.subscribe(this.clear.bind(this))
-    );
+    this.subscriptions.push(this.blueprint.updateEvent$.subscribe(e => this.onBlueprintUpdate(e)));
   }
 
   destroy() {
@@ -39,6 +39,8 @@ export class RendererService implements Initializable, Destroyable {
   render(name: string) {
     const project = this.project.getCurrent();
     this.elements.set(name, this.guaid.renderer.render(project, name));
+    this.updatedElement.next(name);
+    this.logger.trace('render', { name });
   }
 
   clear(name: string) {
@@ -54,5 +56,16 @@ export class RendererService implements Initializable, Destroyable {
       filter(v => v === name),
       map(() => this.getElement(name))
     );
+  }
+
+  private onBlueprintUpdate(e: BlueprintUpdatedEvent) {
+    switch (e.type) {
+      case 'blueprint-scope-destroyed':
+        this.clear(e.scope);
+        break;
+      default:
+        this.render(e.scope);
+        break;
+    }
   }
 }

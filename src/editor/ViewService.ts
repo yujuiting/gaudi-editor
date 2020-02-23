@@ -2,7 +2,7 @@ import { Service } from 'typedi';
 import { Rect, Size, Vector } from 'base/math';
 
 export interface View {
-  rootName: string;
+  scope: string;
   // canvas coordinate
   rect: Rect;
 }
@@ -14,19 +14,19 @@ const viewGap = 32;
 export class ViewService {
   private views: View[] = [];
 
-  create(rootName: string) {
+  create(scope: string) {
     const rect = Rect.of(this.getNextViewLocation(), defaultViewSize);
-    const view: View = { rootName, rect };
+    const view: View = { scope: scope, rect };
     this.views.push(view);
   }
 
-  destroy(rootName: string) {
-    const index = this.views.findIndex(view => view.rootName === rootName);
+  destroy(scope: string) {
+    const index = this.views.findIndex(view => view.scope === scope);
     if (index > 0) this.views.splice(index, 1);
   }
 
-  get(rootName: string) {
-    const view = this.views.find(view => view.rootName === rootName);
+  get(scope: string) {
+    const view = this.views.find(view => view.scope === scope);
     if (!view) return;
     return { ...view } as const;
   }
@@ -45,14 +45,14 @@ export class ViewService {
   /**
    * from local (inside view) to global (canvas coordinate)
    */
-  localToGlobal(rootName: string, p: Vector) {
-    const view = this.get(rootName);
+  localToGlobal(scope: string, p: Vector) {
+    const view = this.get(scope);
     if (!view) return p;
     return p.add(view.rect.position);
   }
 
-  globalToLocal(rootName: string, p: Vector) {
-    const view = this.get(rootName);
+  globalToLocal(scope: string, p: Vector) {
+    const view = this.get(scope);
     if (!view) return p;
     return p.sub(view.rect.position);
   }

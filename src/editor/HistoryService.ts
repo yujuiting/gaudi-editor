@@ -1,5 +1,6 @@
 import { Service } from 'typedi';
 import { BehaviorSubject } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
 export interface Command {
   label: string;
@@ -17,6 +18,20 @@ export class HistoryService {
     return this.current.asObservable();
   }
 
+  get isLatest$() {
+    return this.current$.pipe(
+      map(() => this.isLatest()),
+      startWith(this.isLatest())
+    );
+  }
+
+  get isOldest$() {
+    return this.current$.pipe(
+      map(() => this.isOldest()),
+      startWith(this.isOldest())
+    );
+  }
+
   private commands: Command[] = [];
 
   private history = new BehaviorSubject<string[]>([]);
@@ -24,19 +39,43 @@ export class HistoryService {
   private current = new BehaviorSubject(-1);
 
   isLatest() {
-    return this.current.value === this.commands.length - 1;
+    return this.getVersion() === this.commands.length - 1;
   }
 
   isOldest() {
-    return this.current.value < 0;
+    return this.getVersion() < 0;
   }
 
-  push(command: Command) {
+  getVersion() {
+    return this.current.value;
+  }
+
+  rollTo(version: number) {
+    while (version > this.getVersion()) {
+      this.redo();
+    }
+
+    while (version < this.getVersion()) {
+      this.undo();
+    }
+  }
+
+  push(command: Command, concatenable = false) {
     if (!this.isLatest()) {
       this.commands.splice(this.current.value + 1);
+      concatenable = false;
     }
 
     command.do();
+
+    if (concatenable && !this.isOldest()) {
+      const lastCommand = this.commands[this.commands.length - 1];
+      // only perform command concating if both have same label
+      if (lastCommand.label === command.label) {
+        this.commands.pop();
+        command = { ...command, undo: lastCommand.undo };
+      }
+    }
 
     this.current.next(this.commands.push(command) - 1);
 

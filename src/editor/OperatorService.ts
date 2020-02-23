@@ -1,21 +1,39 @@
 import { Service } from 'typedi';
+import { map, startWith } from 'rxjs/operators';
 import { JSONValue, Blueprint } from 'gaudi';
-import { HistoryService } from 'base/HistoryService';
-import { BlueprintService } from 'editor/BlueprintService';
+import { HistoryService } from 'editor/HistoryService';
+import { BlueprintService, filterPropUpdateEvent } from 'editor/BlueprintService';
 
 @Service()
 export class OperatorService {
   constructor(private history: HistoryService, private blueprint: BlueprintService) {}
 
+  getBlueprintProp(id: string, key: string) {
+    const target = this.blueprint.get(id);
+    if (!target) throw new Error();
+    return target.props[key];
+  }
+
+  getBlueprintProp$(id: string, key: string) {
+    return this.blueprint.updateEvent$.pipe(
+      filterPropUpdateEvent(id, key),
+      map(e => e.value),
+      startWith(this.getBlueprintProp(id, key))
+    );
+  }
+
   updateBlueprintProp(id: string, key: string, value: JSONValue) {
     const target = this.blueprint.get(id);
     if (!target) throw new Error();
     const oldValue = target.props[key];
-    this.history.push({
-      label: `Update prop ${key}`,
-      do: () => this.blueprint.updateProp(id, key, value),
-      undo: () => this.updateBlueprintProp(id, key, oldValue),
-    });
+    this.history.push(
+      {
+        label: `Update prop: ${key}`,
+        do: () => this.blueprint.updateProp(id, key, value),
+        undo: () => this.blueprint.updateProp(id, key, oldValue),
+      },
+      true
+    );
   }
 
   /**

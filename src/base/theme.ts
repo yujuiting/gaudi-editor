@@ -1,5 +1,4 @@
 import { ThemeProps, FlattenInterpolation } from 'styled-components';
-import { ExtractTypeOf } from 'base/type';
 
 export function get<T extends object>(key: keyof T, defaultValue?: string) {
   return function(props: ThemeProps<T>) {

@@ -1,5 +1,4 @@
 import 'reflect-metadata';
-import { useMemo } from 'react';
 import { Container, ObjectType } from 'typedi';
 import { Observable } from 'rxjs';
 import { useObservable } from 'rxjs-hooks';
@@ -8,7 +7,7 @@ import { ExtractTypeOf, ExcludeTypeOf } from 'base/type';
 import { useMethod as useInstanceMethod } from 'base/hooks';
 
 import { KeybindingService } from 'base/KeybindingService';
-import { HistoryService } from 'base/HistoryService';
+import { HistoryService } from 'editor/HistoryService';
 import { ProjectService } from 'editor/ProjectService';
 import { BlueprintService } from 'editor/BlueprintService';
 import { OperatorService } from 'editor/OperatorService';
@@ -18,6 +17,7 @@ import { WidgetService } from 'editor/widget/WidgetService';
 import { PanelService } from 'editor/widget/PanelService';
 import { EditorPlugin } from 'editor/EditorPlugin';
 import { ViewService } from 'editor/ViewService';
+import { EditorStateService } from 'editor/EditorStateService';
 
 Container.set({ id: Gaudi, type: Gaudi });
 
@@ -33,6 +33,7 @@ Container.get(WidgetService);
 Container.get(PanelService);
 Container.get(EditorPlugin);
 Container.get(ViewService);
+Container.get(EditorStateService);
 
 export function useProperty<T, K extends ExcludeTypeOf<T, Function>>(
   type: ObjectType<T>,
@@ -78,5 +79,5 @@ export function useMethodCall<
 >(type: ObjectType<T>, methodName: K, args: P): R {
   const service = Container.get(type);
   const method: Function = useInstanceMethod<T, K>(service, methodName);
-  return useMemo(() => method(...args), [method, ...args]); // eslint-disable-line
+  return method(...args);
 }

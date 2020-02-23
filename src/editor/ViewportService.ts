@@ -3,7 +3,7 @@ import { fromEvent, BehaviorSubject, Subscription, Subject } from 'rxjs';
 import { takeUntil, switchMap, map } from 'rxjs/operators';
 import { Destroyable, InitializerService } from 'base/LifeCycle';
 import { getRect } from 'base/dom';
-import { Vector, Size, clamp, fixPrecision } from 'base/math';
+import { Vector, Size, clamp, fixPrecision, Rect } from 'base/math';
 import { KeybindingService } from 'base/KeybindingService';
 import { RectTrackerService } from 'base/RectTrackerService';
 import { LoggerService, Logger } from 'base/LoggerService';
@@ -311,6 +311,10 @@ export class ViewportService implements Destroyable {
     return this.toCanvasVector(p).sub(this.getLocation());
   }
 
+  toCanvasRect(rect: Rect) {
+    return Rect.of(this.toCanvasPoint(rect.position), rect.size.mul(1 / this.getScale()));
+  }
+
   toViewportVector(v: Vector) {
     return v.mul(this.getScale());
   }
@@ -318,4 +322,15 @@ export class ViewportService implements Destroyable {
   toViewportPoint(point: Vector) {
     return this.toViewportVector(point.add(this.getLocation()));
   }
+
+  /**
+   * transform position and size
+   */
+  toViewportRect(rect: Rect) {
+    return Rect.of(this.toViewportPoint(rect.position), rect.size.mul(this.getScale()));
+  }
+}
+
+export function mapMouseEventToCanvasPoint(viewport: ViewportService) {
+  return map<MouseEvent, Vector>(e => viewport.pageToCanvasPoint(Vector.of(e.pageX, e.pageY)));
 }

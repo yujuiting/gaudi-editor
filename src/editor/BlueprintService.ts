@@ -1,5 +1,6 @@
 import { Service } from 'typedi';
 import { BehaviorSubject, Subject } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { Blueprint, JSONObject, JSONValue } from 'gaudi';
 import { generateId } from 'base/id';
 import * as object from 'base/object';
@@ -10,6 +11,38 @@ export interface MutableBlueprint extends Mutable<Blueprint> {
   props: JSONObject;
   children: MutableBlueprint[];
 }
+
+interface BlueprintPropUpdatedEvent {
+  type: 'blueprint-prop-updated';
+  scope: string;
+  id: string;
+  key: string;
+  value: JSONValue;
+}
+
+interface BlueprintChildrenUpdatedEvent {
+  type: 'blueprint-children-updated';
+  scope: string;
+  id: string;
+}
+
+interface BlueprintScopeCreatedEvent {
+  type: 'blueprint-scope-created';
+  scope: string;
+  id: string;
+}
+
+interface BlueprintScopeDestroyedEvent {
+  type: 'blueprint-scope-destroyed';
+  scope: string;
+  id: string;
+}
+
+export type BlueprintUpdatedEvent =
+  | BlueprintPropUpdatedEvent
+  | BlueprintChildrenUpdatedEvent
+  | BlueprintScopeCreatedEvent
+  | BlueprintScopeDestroyedEvent;
 
 function toMutable(blueprint: Blueprint): MutableBlueprint {
   const id = generateId();
@@ -49,16 +82,8 @@ export class BlueprintService {
     return this.entry.asObservable();
   }
 
-  get createdRootName$() {
-    return this.createdRootName.asObservable();
-  }
-
-  get updatedRootName$() {
-    return this.updatedRootName.asObservable();
-  }
-
-  get destroyRootName$() {
-    return this.destroyRootName.asObservable();
+  get updateEvent$() {
+    return this.updateEvent.asObservable();
   }
 
   private blueprints = new Map<string, MutableBlueprint>();
@@ -72,23 +97,19 @@ export class BlueprintService {
 
   private entry = new BehaviorSubject<string>('');
 
-  private createdRootName = new Subject<string>();
-
-  private updatedRootName = new Subject<string>();
-
-  private destroyRootName = new Subject<string>();
+  private updateEvent = new Subject<BlueprintUpdatedEvent>();
 
   constructor(private view: ViewService) {}
 
-  import(name: string, value: Blueprint = { type: 'div' }) {
+  import(scope: string, value: Blueprint = { type: 'div' }) {
     const blueprint = toMutable(value);
-    this.rootBlueprints.set(name, blueprint);
+    this.rootBlueprints.set(scope, blueprint);
     forEach(blueprint, current => {
       this.blueprints.set(current.id, current);
-      this.relations.set(current.id, name);
+      this.relations.set(current.id, scope);
     });
-    this.createdRootName.next(name);
-    this.view.create(name);
+    this.updateEvent.next({ type: 'blueprint-scope-created', scope, id: blueprint.id });
+    this.view.create(scope);
   }
 
   export(name: string) {
@@ -106,15 +127,15 @@ export class BlueprintService {
     return blueprints;
   }
 
-  destroy(name: string) {
-    const blueprint = this.rootBlueprints.get(name);
+  destroy(scope: string) {
+    const blueprint = this.rootBlueprints.get(scope);
     if (!blueprint) throw new Error();
     forEach(blueprint, current => {
       this.blueprints.delete(current.id);
       this.relations.delete(current.id);
     });
-    this.destroyRootName.next(name);
-    this.view.destroy(name);
+    this.view.destroy(scope);
+    this.updateEvent.next({ type: 'blueprint-scope-destroyed', scope, id: blueprint.id });
   }
 
   get(id: string) {
@@ -138,31 +159,58 @@ export class BlueprintService {
   }
 
   updateProp(id: string, key: string, value: JSONValue) {
+    const scope = this.relations.get(id);
+    if (!scope) throw new Error('scopt not found');
     const target = this.get(id);
     if (!target) throw new Error();
     target.props[key] = value;
-    this.afterUpdated(id);
+    this.afterUpdated({ type: 'blueprint-prop-updated', scope, id, key, value });
   }
 
   insertChild(id: string, blueprint: Blueprint, at: number) {
+    const scope = this.relations.get(id);
+    if (!scope) throw new Error('scopt not found');
     const target = this.get(id);
     if (!target) throw new Error();
     const child = toMutable(blueprint);
     this.blueprints.set(child.id, child);
     target.children.splice(at, 0, child);
-    this.afterUpdated(id);
+    this.afterUpdated({ type: 'blueprint-children-updated', scope, id });
   }
 
   removeChild(id: string, at: number) {
+    const scope = this.relations.get(id);
+    if (!scope) throw new Error('scopt not found');
     const target = this.get(id);
     if (!target) throw new Error();
     target.children.splice(at, 1);
-    this.afterUpdated(id);
+    this.afterUpdated({ type: 'blueprint-children-updated', scope, id });
   }
 
-  private afterUpdated(id: string) {
-    const rootName = this.relations.get(id);
-    if (!rootName) throw new Error('not found root name');
-    this.updatedRootName.next(rootName);
+  private afterUpdated(event: BlueprintUpdatedEvent) {
+    this.updateEvent.next(event);
   }
+}
+
+export function filterEvent(scope: string, id?: string) {
+  return filter<BlueprintUpdatedEvent>(e => {
+    if (e.scope !== scope) return false;
+    if (id && e.id !== id) return false;
+    return true;
+  });
+}
+
+export function filterEventType(...types: Array<BlueprintUpdatedEvent['type']>) {
+  return filter<BlueprintUpdatedEvent>(e => types.includes(e.type));
+}
+
+export function filterPropUpdateEvent(id?: string, key?: string) {
+  return filter<BlueprintUpdatedEvent, BlueprintPropUpdatedEvent>(
+    (e): e is BlueprintPropUpdatedEvent => {
+      if (e.type !== 'blueprint-prop-updated') return false;
+      if (id && e.id !== id) return false;
+      if (key && e.key !== key) return false;
+      return true;
+    }
+  );
 }

@@ -1,8 +1,7 @@
-import React, { useMemo, createElement } from 'react';
-import styled, { css } from 'styled-components';
+import React, { useMemo, useContext } from 'react';
+import styled, { css, ThemeContext } from 'styled-components';
 import * as theme from 'base/theme';
 import { Rect } from 'base/math';
-import { getLength } from 'base/css';
 
 export interface ViewportProps {
   cursor?: 'grab' | 'grabbing' | 'zoom-in' | 'zoom-out' | 'auto';
@@ -62,23 +61,33 @@ export const View = styled.div.attrs<ViewProps>(props => ({
   height: fit-content;
 `;
 
-const HighlightRectEdge = styled.div`
-  position: absolute;
-  background-color: cyan;
-`;
-
-const HighlightRectWrapper = styled.div`
-  ${HighlightRectEdge} {
-    background-color: ${props => props.theme['viewport.hover.color']};
-  }
-`;
-
 export interface HighlightProps {
   rect: Rect;
   thickness?: number;
+  type: 'selected' | 'hovered';
 }
 
-export const HighlightRect: React.FC<HighlightProps> = ({ rect, thickness = 1 }) => {
+const HighlightRectWrapper = styled.div<{ color: string }>`
+  > div {
+    position: absolute;
+    background-color: ${props => props.color};
+  }
+`;
+
+export const HighlightRect: React.FC<HighlightProps> = ({ rect, thickness = 1, type }) => {
+  const theme = useContext(ThemeContext);
+
+  const color = useMemo(() => {
+    switch (type) {
+      case 'hovered':
+        return theme['viewport.hovered.color'];
+      case 'selected':
+        return theme['viewport.selected.color'];
+      default:
+        return 'red';
+    }
+  }, [theme, type]);
+
   const top = useMemo<React.CSSProperties>(
     () => ({
       left: rect.position.x,
@@ -120,11 +129,11 @@ export const HighlightRect: React.FC<HighlightProps> = ({ rect, thickness = 1 })
   );
 
   return (
-    <HighlightRectWrapper>
-      <HighlightRectEdge style={top} />
-      <HighlightRectEdge style={left} />
-      <HighlightRectEdge style={bottom} />
-      <HighlightRectEdge style={right} />
+    <HighlightRectWrapper color={color}>
+      <div style={top} />
+      <div style={left} />
+      <div style={bottom} />
+      <div style={right} />
     </HighlightRectWrapper>
   );
 };

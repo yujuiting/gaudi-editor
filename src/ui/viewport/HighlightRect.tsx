@@ -1,49 +1,49 @@
-import React, { useMemo } from 'react';
-import { map } from 'rxjs/operators';
-import { useObservable } from 'rxjs-hooks';
-import { Vector, Rect } from 'base/math';
-import { useMethod, useProperty, useProperty$ } from 'editor/di';
-import { ViewportService } from 'editor/ViewportService';
-import { RenderedObjectService, RenderedObject } from 'editor/RenderedObjectService';
+import React from 'react';
+import { useProperty$, useMethod, useMethodCall } from 'editor/di';
+import { EditorStateService } from 'editor/EditorStateService';
 import { HighlightRect } from './components';
+import { Vector, Rect } from 'base/math';
+import { ViewportService } from 'editor/ViewportService';
+import { RenderedObjectService } from 'editor/RenderedObjectService';
 
-function useMouseLocation() {
-  const mousemove$ = useProperty(ViewportService, 'mousemove$');
-  return useObservable(() => mousemove$.pipe(map(e => Vector.of(e.pageX, e.pageY))), Vector.zero);
-}
+export const HighlightHovered: React.FC = () => {
+  const hovered = useProperty$(EditorStateService, 'hovered$', '');
 
-const ConnectedHighlightRect: React.FC = () => {
-  // page coordinate
-  const mouseLocation = useMouseLocation();
+  const target = useMethodCall(RenderedObjectService, 'get', [hovered || '']);
 
-  const pageToCanvasPoint = useMethod(ViewportService, 'pageToCanvasPoint');
-
-  const toViewportPoint = useMethod(ViewportService, 'toViewportPoint');
-
-  const scale = useProperty$(ViewportService, 'scale$', 1);
-
-  const findOn = useMethod(RenderedObjectService, 'findOn');
-
-  const target = useMemo(() => {
-    const result = findOn(pageToCanvasPoint(mouseLocation));
-    let toppest: RenderedObject | undefined;
-    for (const obj of result) {
-      if (!toppest) {
-        toppest = obj;
-      } else if (toppest.info.depth > obj.info.depth) {
-        toppest = obj;
-      }
-    }
-    return toppest;
-  }, [pageToCanvasPoint, mouseLocation, findOn]);
+  const toViewportRect = useMethod(ViewportService, 'toViewportRect');
 
   if (!target) return null;
 
-  const viewportPosition = toViewportPoint(target.rect.position);
-  const viewportSize = target.rect.size.mul(scale);
-  const rect = Rect.of(viewportPosition, viewportSize);
-
-  return <HighlightRect rect={rect} />;
+  return <HighlightRect type="hovered" rect={toViewportRect(target.rect)} />;
 };
 
-export default ConnectedHighlightRect;
+export const HighlightSelected: React.FC = () => {
+  const selected = useProperty$(EditorStateService, 'selected$');
+
+  const getObject = useMethod(RenderedObjectService, 'get');
+
+  const toViewportRect = useMethod(ViewportService, 'toViewportRect');
+
+  if (!selected) return null;
+
+  /**
+   * cannot memo follow parts because rect of object will not update reference
+   */
+  let tl = Vector.maximin;
+  let br = Vector.minimun;
+
+  for (const objectId of selected) {
+    const target = getObject(objectId);
+    if (!target) continue;
+    const { position, size } = target.rect;
+    if (position.x < tl.x) tl = tl.setX(position.x);
+    if (position.y < tl.y) tl = tl.setY(position.y);
+    if (position.x + size.width > br.x) br = br.setX(position.x + size.width);
+    if (position.y + size.height > br.y) br = br.setY(position.y + size.height);
+  }
+
+  const rect = toViewportRect(Rect.of(tl, br));
+
+  return <HighlightRect type="selected" rect={rect} />;
+};

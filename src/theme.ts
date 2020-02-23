@@ -3,7 +3,8 @@ import 'styled-components';
 const theme = {
   'app.background': '#5e5e5e',
   'viewport.background': '#282828',
-  'viewport.hover.color': 'cyan',
+  'viewport.hovered.color': 'cyan',
+  'viewport.selected.color': '#FF00E4',
   'canvas.grid.color': '#666666',
   'toolbar.background': '#535353',
   'toolbar.divider.color': '#3e3e3e',
@@ -18,7 +19,10 @@ const theme = {
   'fontSize.small': '0.6rem',
   'fontSize.normal': '1rem',
   'fontSize.large': '1.4rem',
-  'info-panel.width': '320px',
+  'information.default-width': '320px',
+  'operation-history.active-color': '',
+  'operation-history.inactive-color': '#999',
+  'component.input.background': '#5e5e5e',
 };
 
 type Theme = typeof theme;

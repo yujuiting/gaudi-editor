@@ -1,6 +1,8 @@
 import React from 'react';
 import { WidgetType, AnyWidget } from 'editor/widget/type';
-import { FolderOpen, Save, Copy, Paste, Layer, Extension, Redo, Undo } from 'ui/components/icons';
+import { FolderOpen, Save, Copy, Paste, Layer, Extension, History } from 'ui/components/icons';
+import { Redo, Undo } from 'ui/widget/tool/Edit';
+import OperationHistory from 'ui/widget/panel/OperationHistory';
 
 const widgets: AnyWidget[] = [
   {
@@ -35,15 +37,13 @@ const widgets: AnyWidget[] = [
     type: WidgetType.Icon,
     id: 'undo',
     group: 'topbar.edit',
-    // eslint-disable-next-line react/display-name
-    render: () => <Undo title="Undo" />,
+    render: Undo,
   },
   {
     type: WidgetType.Icon,
     id: 'redo',
     group: 'topbar.edit',
-    // eslint-disable-next-line react/display-name
-    render: () => <Redo title="Redo" />,
+    render: Redo,
   },
   {
     type: WidgetType.Panel,
@@ -60,6 +60,13 @@ const widgets: AnyWidget[] = [
     renderIcon: () => <Extension title="Extensions" />,
     // eslint-disable-next-line react/display-name
     renderPanel: () => <div>Extensions</div>,
+  },
+  {
+    type: WidgetType.Panel,
+    id: 'operation-history',
+    // eslint-disable-next-line react/display-name
+    renderIcon: () => <History title="History" />,
+    renderPanel: OperationHistory,
   },
 ];
 

@@ -113,6 +113,18 @@ export class RenderedObjectService implements Initializable, Destroyable {
     return this.rootRenderedObjects;
   }
 
+  getFrontest(point: Vector) {
+    const objects = this.findOn(point);
+    let frontest: RenderedObject | null = null;
+    for (const object of objects) {
+      if (!frontest) frontest = object;
+      else if (object.info.depth < frontest.info.depth) {
+        frontest = object;
+      }
+    }
+    return frontest;
+  }
+
   findIn(rect: Rect) {
     return this.tree.findIn(rect);
   }

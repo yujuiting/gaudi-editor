@@ -16,6 +16,10 @@ export class Vector {
 
   static readonly zero = new Vector(0, 0);
 
+  static readonly minimun = new Vector(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER);
+
+  static readonly maximin = new Vector(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+
   static readonly id = new Vector(1, 1);
 
   constructor(public readonly x: number, public readonly y: number) {}
@@ -43,6 +47,14 @@ export class Vector {
   eq(xOrVector: Vector | number, y = 0): boolean {
     if (typeof xOrVector === 'number') return this.x === xOrVector && this.y === y;
     return this.x === xOrVector.x && this.y === xOrVector.y;
+  }
+
+  setX(x: number) {
+    return Vector.of(x, this.y);
+  }
+
+  setY(y: number) {
+    return Vector.of(this.x, y);
   }
 
   len() {
@@ -119,9 +131,15 @@ export class Size {
 export class Rect {
   static of(x: number, y: number, width: number, height: number): Rect;
   static of(position: Vector, size: Size): Rect;
+  static of(topLeft: Vector, bottomRight: Vector): Rect;
   static of(...args: unknown[]) {
     if (args[0] instanceof Vector && args[1] instanceof Size) {
       return new Rect(args[0], args[1]);
+    }
+
+    if (args[0] instanceof Vector && args[1] instanceof Vector) {
+      const [topLeft, bottomRight] = args;
+      return new Rect(topLeft, Size.of(bottomRight.x - topLeft.x, bottomRight.y - topLeft.y));
     }
 
     if (args.every(arg => typeof arg === 'number')) {

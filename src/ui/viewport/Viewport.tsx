@@ -1,16 +1,13 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { merge } from 'rxjs';
-import { switchMap, map } from 'rxjs/operators';
-import { useObservable } from 'rxjs-hooks';
 import { Vector, Size } from 'base/math';
-import { useProperty, useProperty$, useMethod, useMethodCall } from 'editor/di';
+import { useProperty$, useMethod, useMethodCall } from 'editor/di';
 import { ViewportService, ControlState } from 'editor/ViewportService';
 import { ViewService } from 'editor/ViewService';
 import { BlueprintService } from 'editor/BlueprintService';
 import { Viewport, Canvas } from './components';
 import IsolatedView from './IsolatedView';
 import Blueprint from './Blueprint';
-import HighlightRect from './HighlightRect';
+import { HighlightHovered, HighlightSelected } from './HighlightRect';
 
 const getCursor = (state: ControlState) => {
   switch (state) {
@@ -28,23 +25,9 @@ const getCursor = (state: ControlState) => {
   }
 };
 
-function useRootNames() {
-  const createdRootName$ = useProperty(BlueprintService, 'createdRootName$');
-  const destroyRootName$ = useProperty(BlueprintService, 'destroyRootName$');
-  const getRootNames = useMethod(BlueprintService, 'getRootNames');
-  return useObservable<
-    string[],
-    [typeof createdRootName$, typeof destroyRootName$, typeof getRootNames]
-  >(
-    inputs$ =>
-      inputs$.pipe(
-        switchMap(([createdRootName$, destroyRootName$, getRootNames]) => {
-          return merge(createdRootName$, destroyRootName$).pipe(map(() => getRootNames()));
-        })
-      ),
-    getRootNames(),
-    [createdRootName$, destroyRootName$, getRootNames]
-  );
+function useScopes() {
+  useProperty$(BlueprintService, 'updateEvent$');
+  return useMethodCall(BlueprintService, 'getRootNames', []);
 }
 
 const ConnectedViewport: React.FC = () => {
@@ -71,7 +54,7 @@ const ConnectedViewport: React.FC = () => {
     [scale, location, canvasSize]
   );
 
-  const rootNames = useRootNames();
+  const scopes = useScopes();
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -85,8 +68,9 @@ const ConnectedViewport: React.FC = () => {
 
   return (
     <Viewport ref={viewportRef} cursor={getCursor(controlState)}>
-      <Canvas style={canvasStyle}>{rootNames.map(renderView)}</Canvas>
-      <HighlightRect />
+      <Canvas style={canvasStyle}>{scopes.map(renderView)}</Canvas>
+      <HighlightSelected />
+      <HighlightHovered />
     </Viewport>
   );
 };
