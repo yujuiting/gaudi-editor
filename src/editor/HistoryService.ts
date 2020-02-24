@@ -8,6 +8,21 @@ export interface Command {
   undo: () => void;
 }
 
+export interface ConcatableCommand<T> {
+  label: string;
+  execute: (args: T) => void;
+  prev: T;
+  next: T;
+}
+
+type AnyCommand<T = any> = Command | ConcatableCommand<T>;
+
+type InternalCommand = AnyCommand & { timestamp: number };
+
+function isConcatableCommand<T>(command: AnyCommand<T>): command is ConcatableCommand<T> {
+  return typeof (command as ConcatableCommand<T>).execute === 'function';
+}
+
 @Service()
 export class HistoryService {
   get history$() {
@@ -32,7 +47,7 @@ export class HistoryService {
     );
   }
 
-  private commands: Command[] = [];
+  private commands: InternalCommand[] = [];
 
   private history = new BehaviorSubject<string[]>([]);
 
@@ -60,25 +75,31 @@ export class HistoryService {
     }
   }
 
-  push(command: Command, concatenable = false) {
+  push<T>(command: AnyCommand<T>) {
     if (!this.isLatest()) {
       this.commands.splice(this.current.value + 1);
-      concatenable = false;
     }
 
-    command.do();
+    this.doCommand(command);
 
-    if (concatenable && !this.isOldest()) {
+    const timestamp = Date.now();
+
+    if (isConcatableCommand(command)) {
       const lastCommand = this.commands[this.commands.length - 1];
-      // only perform command concating if both have same label
-      if (lastCommand.label === command.label) {
+
+      // perform command concating if last command is also a concatable command and has same label
+      if (
+        lastCommand &&
+        timestamp - lastCommand.timestamp < 500 &&
+        isConcatableCommand(lastCommand) &&
+        lastCommand.label === command.label
+      ) {
+        command = { ...command, prev: lastCommand.prev as T };
         this.commands.pop();
-        command = { ...command, undo: lastCommand.undo };
       }
     }
 
-    this.current.next(this.commands.push(command) - 1);
-
+    this.current.next(this.commands.push({ ...command, timestamp }) - 1);
     this.history.next(this.commands.map(command => command.label));
   }
 
@@ -89,7 +110,7 @@ export class HistoryService {
 
     const command = this.commands[this.current.value];
 
-    command.do();
+    this.doCommand(command);
   }
 
   undo() {
@@ -97,8 +118,24 @@ export class HistoryService {
 
     const command = this.commands[this.current.value];
 
-    command.undo();
+    this.undoCommand(command);
 
     this.current.next(this.current.value - 1);
+  }
+
+  doCommand<T>(command: AnyCommand<T>) {
+    if (isConcatableCommand(command)) {
+      command.execute(command.next);
+    } else {
+      command.do();
+    }
+  }
+
+  undoCommand<T>(command: AnyCommand<T>) {
+    if (isConcatableCommand(command)) {
+      command.execute(command.prev);
+    } else {
+      command.undo();
+    }
   }
 }

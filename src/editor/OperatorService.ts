@@ -26,14 +26,12 @@ export class OperatorService {
     const target = this.blueprint.get(id);
     if (!target) throw new Error();
     const oldValue = target.props[key];
-    this.history.push(
-      {
-        label: `Update prop: ${key}`,
-        do: () => this.blueprint.updateProp(id, key, value),
-        undo: () => this.blueprint.updateProp(id, key, oldValue),
-      },
-      true
-    );
+    this.history.push({
+      label: `Update prop: ${key}`,
+      prev: { id, key, value: oldValue },
+      next: { id, key, value },
+      execute: args => this.blueprint.updateProp(args.id, args.key, args.value),
+    });
   }
 
   /**
