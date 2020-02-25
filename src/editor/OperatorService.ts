@@ -12,7 +12,7 @@ export class OperatorService {
     return this.blueprint.getProp<T>(id, key);
   }
 
-  getBlueprintProp$<T extends JSONValue>(id: string, key: string) {
+  watchBlueprintProp<T extends JSONValue>(id: string, key: string) {
     return this.blueprint.updateEvent$.pipe(
       filterPropUpdateEvent(id, key),
       map(e => e.value as T),

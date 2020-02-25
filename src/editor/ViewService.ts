@@ -1,5 +1,7 @@
 import { Service } from 'typedi';
+import { Subject } from 'rxjs';
 import { Rect, Size, Vector } from 'base/math';
+import { startWith, filter, map } from 'rxjs/operators';
 
 export interface View {
   scope: string;
@@ -12,7 +14,13 @@ const viewGap = 32;
 
 @Service()
 export class ViewService {
+  get viewUpdated$() {
+    return this.viewUpdated.asObservable();
+  }
+
   private views: View[] = [];
+
+  private viewUpdated = new Subject<Readonly<View>>();
 
   create(scope: string) {
     const rect = Rect.of(this.getNextViewLocation(), defaultViewSize);
@@ -27,8 +35,15 @@ export class ViewService {
 
   get(scope: string) {
     const view = this.views.find(view => view.scope === scope);
-    if (!view) return;
+    if (!view) return null;
     return { ...view } as const;
+  }
+
+  updateViewSize(scope: string, size: Size) {
+    const view = this.views.find(view => view.scope === scope);
+    if (!view) throw new Error();
+    view.rect = Rect.of(view.rect.position, size);
+    this.viewUpdated.next(view);
   }
 
   getNextViewLocation() {
@@ -55,5 +70,13 @@ export class ViewService {
     const view = this.get(scope);
     if (!view) return p;
     return p.sub(view.rect.position);
+  }
+
+  watchRect(scope: string) {
+    return this.viewUpdated$.pipe(
+      filter(view => view.scope === scope),
+      startWith(this.get(scope)),
+      map(view => view?.rect || Rect.zero)
+    );
   }
 }

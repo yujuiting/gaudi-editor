@@ -35,7 +35,7 @@ const Layer: React.FC<LayerProps> = props => {
   const { blueprintId, children } = props;
   const selected = useSelected();
   const type = useMethodCall(BlueprintService, 'getType', [blueprintId]);
-  const select = useMethod(EditorStateService, 'setSelected', [blueprintId]);
+  const select = useMethod(EditorStateService, 'select', [blueprintId]);
   return (
     <Container>
       <Name onClick={select} selected={selected.includes(blueprintId)}>

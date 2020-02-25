@@ -15,9 +15,15 @@ export class EditorStateService {
     return this.selected.asObservable();
   }
 
+  get currentScope$() {
+    return this.currentScope.asObservable();
+  }
+
   private hovered = new BehaviorSubject<string | undefined>(undefined);
 
   private selected = new BehaviorSubject<string[]>([]);
+
+  private currentScope = new BehaviorSubject<string | undefined>(undefined);
 
   private multipleSelecting = false;
 
@@ -41,7 +47,7 @@ export class EditorStateService {
 
     keybinding.define({
       id: 'multiple-selecting',
-      parts: ['Shift'],
+      parts: ['Meta'],
       onEnter: () => this.enableMultipleSelection(true),
       onLeave: () => this.enableMultipleSelection(false),
     });
@@ -55,25 +61,33 @@ export class EditorStateService {
     return this.hovered.value;
   }
 
-  addCurrentHovered() {
-    const hovered = this.getHovered();
-    if (!hovered) return;
-    this.selected.next(this.getSelected().concat(hovered));
-  }
-
   addSelected(id: string) {
     const target = this.renderedObject.get(id);
     if (!target) return;
+    // multiple selection only support in same scope
+    if (target.info.scope !== this.getCurrentScope()) {
+      this.clearSelected();
+    }
     const currentSelected = this.getSelected();
     // prevent select repeatly
     if (currentSelected.find(objectId => objectId === id)) return;
     this.selected.next(currentSelected.concat(id));
+    this.setCurrentScope(target.info.scope);
   }
 
   setSelected(id: string) {
     const target = this.renderedObject.get(id);
     if (!target) return;
     this.selected.next([id]);
+    this.setCurrentScope(target.info.scope);
+  }
+
+  select(id: string) {
+    if (this.multipleSelecting) {
+      this.addSelected(id);
+    } else {
+      this.setSelected(id);
+    }
   }
 
   removeSelected(id: string) {
@@ -91,13 +105,21 @@ export class EditorStateService {
     this.selected.next([]);
   }
 
+  setCurrentScope(scope?: string) {
+    this.currentScope.next(scope);
+  }
+
+  getCurrentScope() {
+    return this.currentScope.value;
+  }
+
   private onViewportMouseDown() {
     const hovered = this.getHovered();
-    if (!hovered) return this.clearSelected();
-    if (this.multipleSelecting) {
-      this.addSelected(hovered);
-    } else {
-      this.setSelected(hovered);
+    if (!hovered) {
+      this.clearSelected();
+      this.setCurrentScope();
+      return;
     }
+    this.select(hovered);
   }
 }

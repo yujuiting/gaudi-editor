@@ -3,24 +3,22 @@ import { RendererService } from 'editor/RendererService';
 import { useMethodCall, useMethod } from 'editor/di';
 
 export interface Props {
-  rootName: string;
+  scope: string;
 }
 
 const Blueprint: React.FC<Props> = props => {
-  const { rootName } = props;
+  const { scope } = props;
 
   const [, update] = useState(0);
 
-  const element = useMethodCall(RendererService, 'getElement', [rootName]);
+  const element = useMethodCall(RendererService, 'getElement', [scope]);
 
   const watch = useMethod(RendererService, 'watch');
 
   useEffect(() => {
-    const subscription = watch(rootName).subscribe(() => {
-      update(c => c + 1);
-    });
+    const subscription = watch(scope).subscribe(() => update(c => c + 1));
     return () => subscription.unsubscribe();
-  }, [watch, rootName]);
+  }, [watch, scope]);
 
   return <div>{element}</div>;
 };

@@ -58,22 +58,14 @@ const Page = styled(VStack)`
   overflow: auto;
 `;
 
-const NoSelected = styled.div`
-  width: 100%;
-  height: 100%;
-`;
-
 const Information: React.FC = () => {
   const [pageType, setPageType] = useState(PageType.View);
-
-  const selected = useProperty$(EditorStateService, 'selected$', []);
 
   function renderPageTool(type: PageType) {
     return <PageTool type={type} onClick={setPageType} active={pageType === type} />;
   }
 
   function renderPage() {
-    if (selected.length === 0) return <NoSelected>No Selected</NoSelected>;
     const ContentType = contentMap[pageType];
     return <ContentType />;
   }

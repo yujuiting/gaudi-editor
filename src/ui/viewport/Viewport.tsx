@@ -4,10 +4,12 @@ import { useProperty$, useMethod, useMethodCall } from 'editor/di';
 import { ViewportService, ControlState } from 'editor/ViewportService';
 import { ViewService } from 'editor/ViewService';
 import { BlueprintService } from 'editor/BlueprintService';
+import useViewRect from 'ui/hooks/useViewRect';
 import { Viewport, Canvas } from './components';
 import IsolatedView from './IsolatedView';
 import Blueprint from './Blueprint';
 import { HighlightHovered, HighlightSelected } from './HighlightRect';
+import { EditorStateService } from 'editor/EditorStateService';
 
 const getCursor = (state: ControlState) => {
   switch (state) {
@@ -62,8 +64,8 @@ const ConnectedViewport: React.FC = () => {
     return () => unbindRef();
   }, [viewportRef, bindRef, unbindRef]);
 
-  function renderView(rootName: string) {
-    return <ConnectedView key={rootName} rootName={rootName} />;
+  function renderView(scope: string) {
+    return <ConnectedView key={scope} scope={scope} />;
   }
 
   return (
@@ -76,25 +78,24 @@ const ConnectedViewport: React.FC = () => {
 };
 
 interface ConnectedViewProps {
-  rootName: string;
+  scope: string;
 }
 
 const ConnectedView: React.FC<ConnectedViewProps> = props => {
-  const { rootName } = props;
-
-  const view = useMethodCall(ViewService, 'get', [rootName]);
-
-  if (!view) return null;
+  const { scope } = props;
+  const [rect] = useViewRect(scope);
+  const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
 
   return (
     <IsolatedView
       disablePointerEvent
-      x={view.rect.position.x}
-      y={view.rect.position.y}
-      width={view.rect.size.width}
-      height={view.rect.size.height}
+      x={rect.position.x}
+      y={rect.position.y}
+      width={rect.size.width}
+      height={rect.size.height}
+      onClick={selectScope}
     >
-      <Blueprint rootName={rootName} />
+      <Blueprint scope={scope} />
     </IsolatedView>
   );
 };

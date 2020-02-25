@@ -123,6 +123,14 @@ export class Size {
     return this.width === widthOrSize.width && this.height === widthOrSize.height;
   }
 
+  setWidth(width: number) {
+    return Size.of(width, this.height);
+  }
+
+  setHeight(height: number) {
+    return Size.of(this.width, height);
+  }
+
   toString() {
     return `Size(${this.width}, ${this.height})`;
   }

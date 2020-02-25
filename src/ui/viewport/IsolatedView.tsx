@@ -21,7 +21,7 @@ const Iframe = styled.iframe`
   ${disablePointerEvent}
 `;
 
-type IsolatedViewProps = ViewProps & IframeProps;
+type IsolatedViewProps = ViewProps & IframeProps & React.DOMAttributes<HTMLDivElement>;
 
 const IsolatedView: React.FC<IsolatedViewProps> = ({ children, disablePointerEvent, ...props }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
