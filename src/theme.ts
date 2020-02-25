@@ -26,6 +26,8 @@ const theme = {
   'component.input.hovered.background': '#1d1d1d',
   'component.input.invalid.border-color': '$color.danger',
   'component.input.invalid.background': '',
+  'component.layer.hovered.background': '#1d1d1d',
+  'component.layer.selected.background': '$color.highlight',
 };
 
 type Theme = typeof theme;

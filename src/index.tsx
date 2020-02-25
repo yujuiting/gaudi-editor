@@ -10,6 +10,7 @@ import { ProjectService } from 'editor/ProjectService';
 import widgets from './widgets';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import { PanelService } from 'editor/widget/PanelService';
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
@@ -20,6 +21,7 @@ const initializer = Container.get(InitializerService);
 const keyboard = Container.get(KeyboardService);
 const widget = Container.get(WidgetService);
 const project = Container.get(ProjectService);
+const panel = Container.get(PanelService);
 
 keyboard.bind(window);
 
@@ -52,6 +54,7 @@ keyboard.bind(window);
     metadata: { plugins: [], version: '' },
     data: {},
   });
+  panel.open('components-and-hierarchy');
   ReactDOM.render(<App />, document.getElementById('root'));
 })();
 

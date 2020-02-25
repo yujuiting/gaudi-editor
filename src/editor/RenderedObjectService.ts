@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { Subscription, combineLatest } from 'rxjs';
-import { distinctUntilChanged, debounceTime, throttleTime, map } from 'rxjs/operators';
+import { distinctUntilChanged, debounceTime, map } from 'rxjs/operators';
 import { RenderingInfo } from 'gaudi';
 import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { Rect, Vector, Size } from 'base/math';

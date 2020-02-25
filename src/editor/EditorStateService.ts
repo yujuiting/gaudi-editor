@@ -41,7 +41,7 @@ export class EditorStateService {
 
     keybinding.define({
       id: 'multiple-selecting',
-      parts: ['ShiftLeft'],
+      parts: ['Shift'],
       onEnter: () => this.enableMultipleSelection(true),
       onLeave: () => this.enableMultipleSelection(false),
     });
@@ -70,6 +70,12 @@ export class EditorStateService {
     this.selected.next(currentSelected.concat(id));
   }
 
+  setSelected(id: string) {
+    const target = this.renderedObject.get(id);
+    if (!target) return;
+    this.selected.next([id]);
+  }
+
   removeSelected(id: string) {
     const selected = this.getSelected();
     const index = selected.findIndex(objectId => objectId === id);
@@ -86,11 +92,12 @@ export class EditorStateService {
   }
 
   private onViewportMouseDown() {
-    if (!this.multipleSelecting) {
-      this.clearSelected();
-    }
     const hovered = this.getHovered();
     if (!hovered) return this.clearSelected();
-    this.addSelected(hovered);
+    if (this.multipleSelecting) {
+      this.addSelected(hovered);
+    } else {
+      this.setSelected(hovered);
+    }
   }
 }

@@ -7,9 +7,14 @@ import * as object from 'base/object';
 import { ViewService } from 'editor/ViewService';
 
 export interface MutableBlueprint extends Mutable<Blueprint> {
-  id: string;
+  readonly id: string;
   props: JSONObject;
   children: MutableBlueprint[];
+}
+
+export interface ImmutableBlueprint extends MutableBlueprint {
+  readonly props: Readonly<JSONObject>;
+  readonly children: ImmutableBlueprint[];
 }
 
 interface BlueprintPropUpdatedEvent {
@@ -44,13 +49,13 @@ export type BlueprintUpdatedEvent =
   | BlueprintScopeCreatedEvent
   | BlueprintScopeDestroyedEvent;
 
-function toMutable(blueprint: Blueprint): MutableBlueprint {
+function toMutableBlueprint(blueprint: Blueprint): MutableBlueprint {
   const id = generateId();
   const { type, props = {}, children = [] } = blueprint;
-  return { id, type, props, children: children.map(toMutable) };
+  return { id, type, props, children: children.map(toMutableBlueprint) };
 }
 
-function toImmutable(mutable: MutableBlueprint): Blueprint {
+function toBlueprint(mutable: MutableBlueprint): Blueprint {
   const { type } = mutable;
   let props: JSONObject | undefined;
   let children: Blueprint[] | undefined;
@@ -60,7 +65,7 @@ function toImmutable(mutable: MutableBlueprint): Blueprint {
   }
 
   if (mutable.children.length > 0) {
-    children = mutable.children.map(toImmutable);
+    children = mutable.children.map(toBlueprint);
   }
   const blueprint: Blueprint = { type, props, children };
   return blueprint;
@@ -102,7 +107,7 @@ export class BlueprintService {
   constructor(private view: ViewService) {}
 
   import(scope: string, value: Blueprint = { type: 'div' }) {
-    const blueprint = toMutable(value);
+    const blueprint = toMutableBlueprint(value);
     this.rootBlueprints.set(scope, blueprint);
     forEach(blueprint, current => {
       this.blueprints.set(current.id, current);
@@ -115,7 +120,7 @@ export class BlueprintService {
   export(name: string) {
     const blueprint = this.rootBlueprints.get(name);
     if (!blueprint) throw new Error();
-    return toImmutable(blueprint);
+    return toBlueprint(blueprint);
   }
 
   exportAll() {
@@ -138,12 +143,41 @@ export class BlueprintService {
     this.updateEvent.next({ type: 'blueprint-scope-destroyed', scope, id: blueprint.id });
   }
 
-  get(id: string) {
-    return this.blueprints.get(id);
+  get(id: string): ImmutableBlueprint {
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    return target;
   }
 
-  getRoot(name: string) {
-    return this.rootBlueprints.get(name);
+  getRoot(scope: string): ImmutableBlueprint {
+    const target = this.rootBlueprints.get(scope);
+    if (!target) throw new Error();
+    return target;
+  }
+
+  getType(id: string) {
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    return target.type;
+  }
+
+  getProp<T extends JSONValue>(id: string, key: string) {
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    return object.get<T>(target.props, key);
+  }
+
+  getChildrenCount(id: string) {
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    return target.children.length;
+  }
+
+  getChildAt(id: string, at: number) {
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    if (!target.children[at]) return;
+    return toBlueprint(target.children[at]);
   }
 
   getRootNames() {
@@ -161,7 +195,7 @@ export class BlueprintService {
   updateProp(id: string, key: string, value: JSONValue) {
     const scope = this.relations.get(id);
     if (!scope) throw new Error('scopt not found');
-    const target = this.get(id);
+    const target = this.blueprints.get(id);
     if (!target) throw new Error();
     object.set(target, `props.${key}`, value);
     this.afterUpdated({ type: 'blueprint-prop-updated', scope, id, key, value });
@@ -170,9 +204,9 @@ export class BlueprintService {
   insertChild(id: string, blueprint: Blueprint, at: number) {
     const scope = this.relations.get(id);
     if (!scope) throw new Error('scopt not found');
-    const target = this.get(id);
+    const target = this.blueprints.get(id);
     if (!target) throw new Error();
-    const child = toMutable(blueprint);
+    const child = toMutableBlueprint(blueprint);
     this.blueprints.set(child.id, child);
     target.children.splice(at, 0, child);
     this.afterUpdated({ type: 'blueprint-children-updated', scope, id });
@@ -181,7 +215,7 @@ export class BlueprintService {
   removeChild(id: string, at: number) {
     const scope = this.relations.get(id);
     if (!scope) throw new Error('scopt not found');
-    const target = this.get(id);
+    const target = this.blueprints.get(id);
     if (!target) throw new Error();
     target.children.splice(at, 1);
     this.afterUpdated({ type: 'blueprint-children-updated', scope, id });

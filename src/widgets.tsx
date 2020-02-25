@@ -3,6 +3,7 @@ import { WidgetType, AnyWidget } from 'editor/widget/type';
 import { FolderOpen, Save, Copy, Paste, Layer, Extension, History } from 'ui/components/icons';
 import { Redo, Undo } from 'ui/widget/tool/Edit';
 import OperationHistory from 'ui/widget/panel/OperationHistory';
+import Hierarchy from 'ui/widget/panel/Hierarchy';
 import * as inputs from 'ui/widget/inputs';
 
 const widgets: AnyWidget[] = [
@@ -50,9 +51,9 @@ const widgets: AnyWidget[] = [
     type: WidgetType.Panel,
     id: 'components-and-hierarchy',
     // eslint-disable-next-line react/display-name
-    renderIcon: () => <Layer title="Component &Hierarchy" />,
+    renderIcon: () => <Layer title="Component & Hierarchy" />,
     // eslint-disable-next-line react/display-name
-    renderPanel: () => <div>Component & Hierarchy</div>,
+    renderPanel: Hierarchy,
   },
   {
     type: WidgetType.Panel,

@@ -63,12 +63,22 @@ export function useProperty$<T, K extends ExtractTypeOf<T, Observable<unknown>>>
   return useObservable(() => service[propertyName], defaultValue);
 }
 
+export function useMethod<T, K extends ExtractTypeOf<T, Function>, P extends Parameters<T[K]>>(
+  type: ObjectType<T>,
+  methodName: K,
+  args: P
+): () => ReturnType<T[K]>;
 export function useMethod<T, K extends ExtractTypeOf<T, Function>>(
   type: ObjectType<T>,
   methodName: K
+): T[K];
+export function useMethod<T, K extends ExtractTypeOf<T, Function>, P extends Parameters<T[K]>>(
+  type: ObjectType<T>,
+  methodName: K,
+  args?: P
 ) {
   const service = Container.get(type);
-  return useInstanceMethod<T, K>(service, methodName);
+  return useInstanceMethod<T, K, P>(service, methodName, args);
 }
 
 export function useMethodCall<
@@ -78,6 +88,6 @@ export function useMethodCall<
   R extends ReturnType<T[K]>
 >(type: ObjectType<T>, methodName: K, args: P): R {
   const service = Container.get(type);
-  const method: Function = useInstanceMethod<T, K>(service, methodName);
+  const method: Function = useInstanceMethod<T, K, P>(service, methodName);
   return method(...args);
 }
