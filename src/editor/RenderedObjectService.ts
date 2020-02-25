@@ -63,7 +63,6 @@ export class RenderedObjectService implements Initializable, Destroyable {
       combineLatest(this.viewport.viewportSize$, this.viewport.location$)
         .pipe(
           map(([size, pos]) => Rect.of(pos, size)),
-          throttleTime(100),
           distinctUntilChanged(Rect.eq)
         )
         .subscribe(this.onVisibleRectChanged.bind(this)),
