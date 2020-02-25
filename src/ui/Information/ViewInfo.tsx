@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { useProperty$, useMethod } from 'editor/di';
 import { EditorStateService } from 'editor/EditorStateService';
-import { Group, GroupTitle } from 'ui/components/Information';
-import { Label } from 'ui/components/Input';
+import { FieldSet, Legend, Label } from 'ui/components/Form';
 import { RenderedObjectService } from 'editor/RenderedObjectService';
 
 const ViewInfo: React.FC = () => {
@@ -19,11 +18,11 @@ const ViewInfo: React.FC = () => {
     if (restScope.length > 0) return 'Multiple scopes selected';
 
     return (
-      <Group>
-        <GroupTitle>View</GroupTitle>
+      <FieldSet>
+        <Legend>View</Legend>
         <Label>Scope Name</Label>
         {scope}
-      </Group>
+      </FieldSet>
     );
   }
 

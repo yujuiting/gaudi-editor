@@ -20,3 +20,5 @@ export { Info } from 'styled-icons/material/Info';
 export { Style } from 'styled-icons/material/Style';
 
 export { History } from 'styled-icons/material/History';
+
+export { Palette } from 'styled-icons/material/Palette';

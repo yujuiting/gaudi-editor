@@ -1,8 +1,10 @@
+import * as CSS from 'csstype';
 import styled, { css } from 'styled-components';
 import { getLength, ifDefined } from 'base/css';
 
 export interface Props {
   grow?: number;
+  alignItems?: CSS.AlignItemsProperty;
   height?: string | number;
   width?: string | number;
 }
@@ -30,6 +32,13 @@ export const HStack = styled.div<Props>`
       flex-grow: ${props.grow};
       overflow: hidden;
     `
+  )}
+  ${ifDefined(
+    'alignItems',
+    props =>
+      css`
+        align-items: ${props.alignItems};
+      `
   )}
 `;
 

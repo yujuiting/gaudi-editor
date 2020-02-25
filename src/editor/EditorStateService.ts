@@ -3,6 +3,7 @@ import { BehaviorSubject, empty } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { ViewportService, ControlState, mapMouseEventToCanvasPoint } from 'editor/ViewportService';
 import { RenderedObjectService } from 'editor/RenderedObjectService';
+import { KeybindingService } from 'base/KeybindingService';
 
 @Service()
 export class EditorStateService {
@@ -18,7 +19,13 @@ export class EditorStateService {
 
   private selected = new BehaviorSubject<string[]>([]);
 
-  constructor(private renderedObject: RenderedObjectService, viewport: ViewportService) {
+  private multipleSelecting = false;
+
+  constructor(
+    private renderedObject: RenderedObjectService,
+    viewport: ViewportService,
+    keybinding: KeybindingService
+  ) {
     viewport.controlState$
       .pipe(
         switchMap(state => (state === ControlState.Default ? viewport.mousemove$ : empty())),
@@ -31,6 +38,17 @@ export class EditorStateService {
     viewport.controlState$
       .pipe(switchMap(state => (state === ControlState.Default ? viewport.mousedown$ : empty())))
       .subscribe(this.onViewportMouseDown.bind(this));
+
+    keybinding.define({
+      id: 'multiple-selecting',
+      parts: ['ShiftLeft'],
+      onEnter: () => this.enableMultipleSelection(true),
+      onLeave: () => this.enableMultipleSelection(false),
+    });
+  }
+
+  enableMultipleSelection(enable: boolean) {
+    this.multipleSelecting = enable;
   }
 
   getHovered() {
@@ -68,6 +86,9 @@ export class EditorStateService {
   }
 
   private onViewportMouseDown() {
+    if (!this.multipleSelecting) {
+      this.clearSelected();
+    }
     const hovered = this.getHovered();
     if (!hovered) return this.clearSelected();
     this.addSelected(hovered);

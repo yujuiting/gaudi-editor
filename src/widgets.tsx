@@ -3,6 +3,7 @@ import { WidgetType, AnyWidget } from 'editor/widget/type';
 import { FolderOpen, Save, Copy, Paste, Layer, Extension, History } from 'ui/components/icons';
 import { Redo, Undo } from 'ui/widget/tool/Edit';
 import OperationHistory from 'ui/widget/panel/OperationHistory';
+import * as inputs from 'ui/widget/inputs';
 
 const widgets: AnyWidget[] = [
   {
@@ -67,6 +68,36 @@ const widgets: AnyWidget[] = [
     // eslint-disable-next-line react/display-name
     renderIcon: () => <History title="History" />,
     renderPanel: OperationHistory,
+  },
+  {
+    type: WidgetType.Input,
+    forType: 'string',
+    render: inputs.InputString,
+  },
+  {
+    type: WidgetType.Input,
+    forType: 'number',
+    render: inputs.InputNumber,
+  },
+  {
+    type: WidgetType.Input,
+    forType: 'datetime',
+    render: inputs.InputDate,
+  },
+  {
+    type: WidgetType.Input,
+    forType: 'boolean',
+    render: inputs.InputDate,
+  },
+  {
+    type: WidgetType.Input,
+    forType: 'length',
+    render: inputs.InputLength,
+  },
+  {
+    type: WidgetType.Input,
+    forType: 'color',
+    render: inputs.InputColor,
   },
 ];
 

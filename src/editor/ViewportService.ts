@@ -161,7 +161,7 @@ export class ViewportService implements Destroyable {
 
     keybindingService.define({
       id: 'pinch',
-      parts: ['MetaLeft'],
+      parts: ['Alt'],
       onEnter: () => this.setControlState(ControlState.CanPinch),
       onLeave: () => this.setControlState(ControlState.Default),
     });

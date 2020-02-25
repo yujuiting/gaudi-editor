@@ -1,8 +1,12 @@
 import { ThemeProps, FlattenInterpolation } from 'styled-components';
 
 export function get<T extends object>(key: keyof T, defaultValue?: string) {
-  return function(props: ThemeProps<T>) {
-    return typeof props.theme[key] !== void 0 ? props.theme[key] : defaultValue;
+  return function(props: ThemeProps<T>): T[keyof T] | string | undefined {
+    const result = typeof props.theme[key] !== void 0 ? props.theme[key] : defaultValue;
+    if (typeof result === 'string' && /^\$/.test(result)) {
+      return get<T>(result.replace(/^\$/, '') as keyof T, defaultValue)(props);
+    }
+    return result;
   };
 }
 

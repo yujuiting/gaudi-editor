@@ -1,8 +1,11 @@
+import { JSONValue } from 'gaudi';
+
 export enum WidgetType {
   Icon,
   Panel,
   Props,
   Styles,
+  Input,
 }
 
 interface Widget {
@@ -36,4 +39,16 @@ export interface StylesWidget extends Widget {
   readonly render: React.JSXElementConstructor<{}>;
 }
 
-export type AnyWidget = IconWidget | PanelWidget | PropsWidget | StylesWidget;
+export interface InputWidgetProps<T> {
+  value?: T;
+  onChange?: (value: T) => void;
+  options?: { label: string; value: T; default?: boolean }[];
+}
+
+export interface InputWidget<T extends JSONValue = JSONValue> extends Widget {
+  readonly type: WidgetType.Input;
+  readonly forType: string;
+  readonly render: React.JSXElementConstructor<InputWidgetProps<T>>;
+}
+
+export type AnyWidget = IconWidget | PanelWidget | PropsWidget | StylesWidget | InputWidget<any>;

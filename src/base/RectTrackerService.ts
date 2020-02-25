@@ -113,8 +113,11 @@ export class RectTrackerService implements Initializable, Destroyable {
     let current = this.waitings.shift();
 
     while ((deadline.timeRemaining() > 0 || !deadline.didTimeout) && current) {
-      const [id, data] = current;
-      this.update(id, data);
+      // it may be untracked
+      if (this.trackings.has(current)) {
+        const [id, data] = current;
+        this.update(id, data);
+      }
       current = this.waitings.shift();
     }
 

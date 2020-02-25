@@ -11,8 +11,8 @@ const theme = {
   'toolbar.size.small': '16px',
   'toolbar.size.large': '24px',
   'color.primary': '#007bff',
-  'color.warning': '#dc3545',
-  'color.danger': '#ffc107',
+  'color.warning': '#ffc107',
+  'color.danger': '#dc3545',
   'color.highlight': '#17a2b8',
   'color.text': '#f8f9fa',
   'color.disable': '#858585',
@@ -23,6 +23,9 @@ const theme = {
   'operation-history.active-color': '',
   'operation-history.inactive-color': '#999',
   'component.input.background': '#5e5e5e',
+  'component.input.hovered.background': '#1d1d1d',
+  'component.input.invalid.border-color': '$color.danger',
+  'component.input.invalid.background': '',
 };
 
 type Theme = typeof theme;

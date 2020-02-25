@@ -1,5 +1,15 @@
 import { Service } from 'typedi';
 import { Subject, fromEvent, Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
+
+function excludeByTagNames(tagNames: string[]) {
+  return filter<KeyboardEvent>(e => {
+    if (!e.target) return true;
+    const tagName = (e.target as HTMLElement).tagName;
+    if (!tagName) return true;
+    return !tagNames.includes(tagName);
+  });
+}
 
 @Service()
 export class KeyboardService {
@@ -26,11 +36,15 @@ export class KeyboardService {
 
     this.target = target;
 
-    const options: AddEventListenerOptions = { capture: true, passive: true };
+    const options: AddEventListenerOptions = { capture: false, passive: false };
 
     this.subscriptions.push(
-      fromEvent<KeyboardEvent>(target, 'keydown', options).subscribe(this.keydown),
-      fromEvent<KeyboardEvent>(target, 'keyup', options).subscribe(this.keyup)
+      fromEvent<KeyboardEvent>(target, 'keydown', options)
+        .pipe(excludeByTagNames(['INPUT', 'TEXTAREA']))
+        .subscribe(this.keydown),
+      fromEvent<KeyboardEvent>(target, 'keyup', options)
+        .pipe(excludeByTagNames(['INPUT', 'TEXTAREA']))
+        .subscribe(this.keyup)
     );
   }
 

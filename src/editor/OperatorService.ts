@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 import { map, startWith } from 'rxjs/operators';
 import { JSONValue, Blueprint } from 'gaudi';
+import * as object from 'base/object';
 import { HistoryService } from 'editor/HistoryService';
 import { BlueprintService, filterPropUpdateEvent } from 'editor/BlueprintService';
 
@@ -8,26 +9,26 @@ import { BlueprintService, filterPropUpdateEvent } from 'editor/BlueprintService
 export class OperatorService {
   constructor(private history: HistoryService, private blueprint: BlueprintService) {}
 
-  getBlueprintProp(id: string, key: string) {
+  getBlueprintProp<T extends JSONValue>(id: string, key: string) {
     const target = this.blueprint.get(id);
     if (!target) throw new Error();
-    return target.props[key];
+    return object.get<T>(target.props, key);
   }
 
-  getBlueprintProp$(id: string, key: string) {
+  getBlueprintProp$<T extends JSONValue>(id: string, key: string) {
     return this.blueprint.updateEvent$.pipe(
       filterPropUpdateEvent(id, key),
-      map(e => e.value),
-      startWith(this.getBlueprintProp(id, key))
+      map(e => e.value as T),
+      startWith(this.getBlueprintProp<T>(id, key))
     );
   }
 
   updateBlueprintProp(id: string, key: string, value: JSONValue) {
     const target = this.blueprint.get(id);
     if (!target) throw new Error();
-    const oldValue = target.props[key];
+    const oldValue = this.getBlueprintProp(id, key);
     this.history.push({
-      label: `Update prop: ${key}`,
+      label: `Update prop: ${key.replace('.', ' ')}`,
       prev: { id, key, value: oldValue },
       next: { id, key, value },
       execute: args => this.blueprint.updateProp(args.id, args.key, args.value),

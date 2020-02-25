@@ -1,7 +1,8 @@
 import { Service } from 'typedi';
 import { distinct } from 'rxjs/operators';
-import { KeyboardService } from './KeyboardService';
-import * as array from './array';
+import * as array from 'base/array';
+import { KeyboardService } from 'base/KeyboardService';
+import { LoggerService, Logger } from 'base/LoggerService';
 
 export interface Keybinding {
   id: string;
@@ -18,45 +19,95 @@ export class KeybindingService {
 
   private buffer: string[] = [];
 
-  constructor(keyboardService: KeyboardService) {
+  private logger: Logger;
+
+  constructor(keyboardService: KeyboardService, logger: LoggerService) {
+    this.logger = logger.create('KeybindingService');
+
     keyboardService.keydown$
       // prevent fire same key repeatly and reset after key up
-      .pipe(distinct(e => e.code, keyboardService.keyup$))
-      .subscribe(e => this.pushBuffer(e.code));
+      // .pipe(distinct(e => e.code, keyboardService.keyup$))
+      .subscribe(e => this.onKeydown(e));
 
-    keyboardService.keyup$.subscribe(() => this.clearBuffer());
+    keyboardService.keyup$.subscribe(e => this.onKeyup(e));
   }
 
   define(keybinding: Keybinding) {
     this.keybindings.push(keybinding);
   }
 
-  private pushBuffer(code: string) {
-    this.buffer.push(code);
-    for (const keybinding of this.keybindings) {
-      if (array.shallowEqual(keybinding.parts, this.buffer)) {
-        this.setCurrent(keybinding);
-        return;
+  private onKeydown(e: KeyboardEvent) {
+    const { code, metaKey, altKey, ctrlKey, shiftKey } = e;
+    console.log('onKeydown', { code, metaKey, altKey, ctrlKey, shiftKey });
+    if (metaKey) this.pushBuffer('Meta');
+    if (altKey) this.pushBuffer('Alt');
+    if (ctrlKey) this.pushBuffer('Ctrl');
+    if (shiftKey) this.pushBuffer('Shift');
+    /**
+     * @TODO refactor follows shit
+     */
+    if (!/(Meta|Alt|Ctrl|Shift)/.test(code)) {
+      if (!this.pushBuffer(code) && this.current) {
+        this.onEnterKeybinding(this.current);
       }
     }
+    if (this.current) {
+      this.logger.trace('prevent default');
+      e.preventDefault();
+    }
+  }
+
+  private onKeyup(e: KeyboardEvent) {
+    const { code, metaKey, altKey, ctrlKey, shiftKey } = e;
+    console.log('onKeyup', { code, metaKey, altKey, ctrlKey, shiftKey });
+    this.clearBuffer();
+  }
+
+  private pushBuffer(code: string) {
+    if (this.buffer.indexOf(code) >= 0) return false;
+    this.buffer.push(code);
+    this.logger.trace('pushBuffer', { code, buffer: this.buffer });
+    for (const keybinding of this.keybindings) {
+      if (array.shallowEqual(keybinding.parts, this.buffer)) {
+        return this.setCurrent(keybinding);
+      }
+    }
+    return false;
   }
 
   private clearBuffer() {
     this.buffer = [];
     this.setCurrent(null);
+    this.logger.trace('clearBuffer', { buffer: this.buffer });
   }
 
   private setCurrent(current: Keybinding | null) {
+    if (current === this.current) return false;
+
+    this.logger.trace('setCurrent', { parts: current?.parts });
+
+    if (this.current) {
+      this.onLeaveKeybinding(this.current);
+    }
+
     if (current) {
-      if (current.onEnter) {
-        current.onEnter();
-      }
-    } else if (this.current) {
-      if (this.current.onLeave) {
-        this.current.onLeave();
-      }
+      this.onEnterKeybinding(current);
     }
 
     this.current = current;
+
+    return true;
+  }
+
+  private onEnterKeybinding(keybinding: Keybinding) {
+    if (keybinding.onEnter) {
+      keybinding.onEnter();
+    }
+  }
+
+  private onLeaveKeybinding(keybinding: Keybinding) {
+    if (keybinding.onLeave) {
+      keybinding.onLeave();
+    }
   }
 }

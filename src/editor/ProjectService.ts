@@ -1,12 +1,13 @@
 import { Service } from 'typedi';
 import { Project, Blueprint } from 'gaudi';
 import { BlueprintService } from 'editor/BlueprintService';
+import { HistoryService } from 'editor/HistoryService';
 
 @Service()
 export class ProjectService {
   private current: Project | null = null;
 
-  constructor(private blueprint: BlueprintService) {}
+  constructor(private blueprint: BlueprintService, private history: HistoryService) {}
 
   setCurrent(project: Project) {
     this.current = project;
@@ -15,7 +16,14 @@ export class ProjectService {
       this.blueprint.import(name, project.blueprints[name]);
     }
 
-    this.blueprint.setEntry(project.entry);
+    this.history.reset();
+    this.history.push({
+      label: 'Open project',
+      do: () => this.blueprint.setEntry(project.entry),
+      undo: () => {
+        throw new Error('cannot undo this command');
+      },
+    });
   }
 
   getCurrent() {

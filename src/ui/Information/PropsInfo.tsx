@@ -4,9 +4,8 @@ import { useProperty$, useMethodCall } from 'editor/di';
 import { EditorStateService } from 'editor/EditorStateService';
 import { BlueprintService } from 'editor/BlueprintService';
 import builtInMetadata from 'editor/built-in-metadata';
-import { Group, GroupTitle } from 'ui/components/Information';
-import { Label } from 'ui/components/Input';
-import PropEditor from 'ui/widget/editor/PropEditor';
+import { FieldSet, Legend } from 'ui/components/Form';
+import PropEditor from 'ui/widget/PropEditor';
 
 const PropsInfo: React.FC = () => {
   const [selected, ...restSelected] = useProperty$(EditorStateService, 'selected$', []);
@@ -18,21 +17,40 @@ const PropsInfo: React.FC = () => {
     return builtInMetadata[blueprint.type];
   }, [blueprint]);
 
-  const keys = useMemo(() => {
-    if (!metadata || !metadata.props) return [];
-    return object.keys(metadata.props);
+  const groups = useMemo(() => {
+    const result = new Map<string, string[]>();
+    if (!metadata || !metadata.props) return result;
+    // make sure default is first group
+    result.set('default', []);
+    const allKeys = object.keys(metadata.props);
+    for (const key of allKeys) {
+      if (/^style./.test(key)) continue;
+      const groupName = metadata.props[key].uiGroup || 'default';
+      const group = result.get(groupName) || [];
+      result.set(groupName, group);
+      group.push(key);
+    }
+    return result;
   }, [metadata]);
 
   function renderProp(propKey: string) {
     return (
-      <div key={propKey}>
-        <Label>{propKey}</Label>
-        <PropEditor
-          propKey={propKey}
-          metadata={metadata!.props![propKey]}
-          blueprintId={blueprint!.id}
-        />
-      </div>
+      <PropEditor
+        key={propKey}
+        propKey={propKey}
+        metadata={metadata!.props![propKey]}
+        blueprintId={blueprint!.id}
+      />
+    );
+  }
+
+  function renderGroup(groupName: string) {
+    const keys = groups.get(groupName)!;
+    return (
+      <FieldSet key={groupName}>
+        <Legend>{groupName}</Legend>
+        {keys.map(renderProp)}
+      </FieldSet>
     );
   }
 
@@ -41,12 +59,7 @@ const PropsInfo: React.FC = () => {
 
     if (!blueprint) return 'Not found blueprint';
 
-    return (
-      <Group>
-        <GroupTitle>Basis</GroupTitle>
-        {keys.map(renderProp)}
-      </Group>
-    );
+    return Array.from(groups.keys()).map(renderGroup);
   }
 
   return <>{renderBody()}</>;

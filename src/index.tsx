@@ -29,11 +29,23 @@ keyboard.bind(window);
   project.setCurrent({
     blueprints: {
       default: {
-        type: 'img',
-        props: {
-          src:
-            'https://upload.wikimedia.org/wikipedia/en/thumb/b/bb/Rick_and_Morty_season_4.png/250px-Rick_and_Morty_season_4.png',
-        },
+        type: 'div',
+        children: [
+          {
+            type: 'img',
+            props: {
+              src:
+                'https://upload.wikimedia.org/wikipedia/en/thumb/b/bb/Rick_and_Morty_season_4.png/250px-Rick_and_Morty_season_4.png',
+            },
+          },
+          {
+            type: 'a',
+            props: {
+              href: '#',
+              children: 'asd',
+            },
+          },
+        ],
       },
     },
     entry: 'default',

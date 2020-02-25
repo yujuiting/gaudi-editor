@@ -1,7 +1,7 @@
 import { FlattenInterpolation } from 'styled-components';
 import * as object from 'base/object';
 
-const builtInLength = [
+export const builtInLength = [
   'initial',
   'inherit',
   'auto',
@@ -22,10 +22,10 @@ const lengthRegexp = {
   vh: /^\d+vh$/,
   vw: /^\d+vw$/,
 };
-const lengthUnits = object.keys(lengthRegexp);
+export const lengthUnits = object.keys(lengthRegexp);
 export type LengthUnit = typeof lengthUnits[number];
 
-function isLength(value: string): boolean {
+export function isLength(value: string): boolean {
   if (isLexicalLength(value)) return true;
   for (const lengthUnit of lengthUnits) {
     if (lengthRegexp[lengthUnit].test(value)) return true;
@@ -49,6 +49,20 @@ export function getLength(
       break;
   }
   return getLength(defaultValue, unit);
+}
+
+export function getLengthNumber(value?: string) {
+  if (!value) return;
+  if (!isLength(value)) return;
+  const [numberPart] = /\d+/.exec(value)!;
+  return numberPart;
+}
+
+export function getLengthUnit(value?: string) {
+  if (!value) return;
+  if (!isLength(value)) return;
+  const [unit] = /\D+/.exec(value)!;
+  return unit;
 }
 
 export function ifDefined<T extends object, K extends keyof T>(

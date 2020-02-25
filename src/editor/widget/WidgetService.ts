@@ -5,6 +5,7 @@ import {
   PanelWidget,
   PropsWidget,
   StylesWidget,
+  InputWidget,
   WidgetType,
 } from 'editor/widget/type';
 
@@ -14,6 +15,7 @@ export class WidgetService {
   private panelWidgets = new Map<string, PanelWidget>();
   private propsWidgets = new Map<string, PropsWidget>();
   private stylesWidgets = new Map<string, StylesWidget>();
+  private inputWidgets = new Map<string, InputWidget>();
 
   register(widget: AnyWidget) {
     switch (widget.type) {
@@ -28,6 +30,9 @@ export class WidgetService {
         break;
       case WidgetType.Styles:
         this.registerStylesWidget(widget);
+        break;
+      case WidgetType.Input:
+        this.registerInputWidget(widget);
         break;
     }
   }
@@ -52,6 +57,10 @@ export class WidgetService {
 
   registerStylesWidget(widget: StylesWidget) {
     this.stylesWidgets.set(widget.id, widget);
+  }
+
+  registerInputWidget(widget: InputWidget) {
+    this.inputWidgets.set(widget.forType, widget);
   }
 
   getIconWidgets() {
@@ -84,5 +93,9 @@ export class WidgetService {
 
   getStylesWidget(id: string) {
     return this.stylesWidgets.get(id);
+  }
+
+  getInputWidget(forType: string) {
+    return this.inputWidgets.get(forType);
   }
 }

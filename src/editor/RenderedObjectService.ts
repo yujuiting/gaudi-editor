@@ -118,7 +118,7 @@ export class RenderedObjectService implements Initializable, Destroyable {
     let frontest: RenderedObject | null = null;
     for (const object of objects) {
       if (!frontest) frontest = object;
-      else if (object.info.depth < frontest.info.depth) {
+      else if (object.info.depth > frontest.info.depth) {
         frontest = object;
       }
     }

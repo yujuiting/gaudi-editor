@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 import { BehaviorSubject } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
+import { KeybindingService } from 'base/KeybindingService';
 
 export interface Command {
   label: string;
@@ -53,6 +54,20 @@ export class HistoryService {
 
   private current = new BehaviorSubject(-1);
 
+  constructor(keybinding: KeybindingService) {
+    keybinding.define({
+      id: 'edit.undo',
+      parts: ['Meta', 'KeyZ'],
+      onEnter: () => this.undo(),
+    });
+
+    keybinding.define({
+      id: 'edit.redo',
+      parts: ['Meta', 'Shift', 'KeyZ'],
+      onEnter: () => this.redo(),
+    });
+  }
+
   isLatest() {
     return this.getVersion() === this.commands.length - 1;
   }
@@ -73,6 +88,12 @@ export class HistoryService {
     while (version < this.getVersion()) {
       this.undo();
     }
+  }
+
+  reset() {
+    this.commands = [];
+    this.history.next([]);
+    this.current.next(-1);
   }
 
   push<T>(command: AnyCommand<T>) {

@@ -163,7 +163,7 @@ export class BlueprintService {
     if (!scope) throw new Error('scopt not found');
     const target = this.get(id);
     if (!target) throw new Error();
-    target.props[key] = value;
+    object.set(target, `props.${key}`, value);
     this.afterUpdated({ type: 'blueprint-prop-updated', scope, id, key, value });
   }
 
