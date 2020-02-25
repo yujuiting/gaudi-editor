@@ -24,7 +24,7 @@ export interface RenderingInfo {
 }
 
 const extractBlueprintName = (text: string) => {
-  const matches = /template:(.+)/.exec(text);
+  const matches = /^blueprint:(.+)/.exec(text);
   return matches && matches[1];
 };
 

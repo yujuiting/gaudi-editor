@@ -9,7 +9,7 @@ const Container = styled.div`
 `;
 
 const Hierarchy: React.FC = () => {
-  const scopes = useMethodCall(BlueprintService, 'getRootNames', []);
+  const scopes = useMethodCall(BlueprintService, 'getScopes', []);
 
   function renderScope(scope: string) {
     return <Scope key={scope} scopeId={scope} />;

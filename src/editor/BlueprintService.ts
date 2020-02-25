@@ -124,7 +124,7 @@ export class BlueprintService {
   }
 
   exportAll() {
-    const roots = this.getRootNames();
+    const roots = this.getScopes();
     const blueprints: Record<string, Blueprint> = {};
     for (const root of roots) {
       blueprints[root] = this.export(root);
@@ -180,7 +180,7 @@ export class BlueprintService {
     return toBlueprint(target.children[at]);
   }
 
-  getRootNames() {
+  getScopes() {
     return Array.from(this.rootBlueprints.keys());
   }
 

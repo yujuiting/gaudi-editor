@@ -68,4 +68,10 @@ export default {
       ...defaultStyleProps,
     },
   },
+  button: {
+    props: {
+      children: { type: 'string', uiLabel: 'text' },
+      ...defaultStyleProps,
+    },
+  },
 } as Record<string, ComponentMetadata | undefined>;

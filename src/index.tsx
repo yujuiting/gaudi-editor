@@ -40,15 +40,11 @@ keyboard.bind(window);
                 'https://upload.wikimedia.org/wikipedia/en/thumb/b/bb/Rick_and_Morty_season_4.png/250px-Rick_and_Morty_season_4.png',
             },
           },
-          {
-            type: 'a',
-            props: {
-              href: '#',
-              children: 'asd',
-            },
-          },
+          { type: 'a', props: { href: '#', children: 'asd' } },
+          { type: 'blueprint:button' },
         ],
       },
+      button: { type: 'button', props: { children: 'click me' } },
     },
     entry: 'default',
     metadata: { plugins: [], version: '' },

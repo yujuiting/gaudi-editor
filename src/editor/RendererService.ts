@@ -4,7 +4,7 @@ import { filter, map } from 'rxjs/operators';
 import { Gaudi } from 'gaudi';
 import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { LoggerService, Logger } from 'base/LoggerService';
-import { ProjectService } from 'editor/ProjectService';
+import { ProjectService, ProjectEvent } from 'editor/ProjectService';
 import { BlueprintService, BlueprintUpdatedEvent } from 'editor/BlueprintService';
 
 @Service()
@@ -29,7 +29,10 @@ export class RendererService implements Initializable, Destroyable {
   }
 
   initialize() {
-    this.subscriptions.push(this.blueprint.updateEvent$.subscribe(e => this.onBlueprintUpdate(e)));
+    this.subscriptions.push(
+      this.project.event$.subscribe(e => this.onProjectEvent(e)),
+      this.blueprint.updateEvent$.subscribe(e => this.onBlueprintUpdate(e))
+    );
   }
 
   destroy() {
@@ -58,8 +61,21 @@ export class RendererService implements Initializable, Destroyable {
     );
   }
 
+  private onProjectEvent(e: ProjectEvent) {
+    switch (e.type) {
+      case 'project-opened':
+        for (const scope in e.project.blueprints) {
+          this.render(scope);
+        }
+        break;
+    }
+  }
+
   private onBlueprintUpdate(e: BlueprintUpdatedEvent) {
     switch (e.type) {
+      case 'blueprint-scope-created':
+        // ignore it and wait for project loaded
+        break;
       case 'blueprint-scope-destroyed':
         this.clear(e.scope);
         break;

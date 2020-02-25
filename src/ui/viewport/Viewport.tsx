@@ -29,7 +29,7 @@ const getCursor = (state: ControlState) => {
 
 function useScopes() {
   useProperty$(BlueprintService, 'updateEvent$');
-  return useMethodCall(BlueprintService, 'getRootNames', []);
+  return useMethodCall(BlueprintService, 'getScopes', []);
 }
 
 const ConnectedViewport: React.FC = () => {

@@ -13,9 +13,9 @@ export class EditorPlugin implements Plugin {
   }
 
   postRender(element: React.ReactElement, info: RenderingInfo, blueprint: MutableBlueprint) {
-    if (info.refBlueprint) {
-      return element;
-    }
+    // if (info.refBlueprint) {
+    //   return element;
+    // }
 
     return createElement(Scaffold, { info, blueprint, key: info.key }, element);
   }
