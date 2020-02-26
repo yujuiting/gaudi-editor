@@ -1,49 +1,41 @@
-import React from 'react';
-import { useProperty$, useMethod, useMethodCall } from 'editor/di';
-import { EditorStateService } from 'editor/EditorStateService';
+import React, { useMemo } from 'react';
+import { useMethod, useMethodCall } from 'editor/di';
 import { HighlightRect } from './components';
 import { Vector, Rect } from 'base/math';
 import { ViewportService } from 'editor/ViewportService';
-import { RenderedObjectService } from 'editor/RenderedObjectService';
+import useHovered from 'ui/hooks/useHovered';
+import useSelected from 'ui/hooks/useSelected';
+import useRenderedObjectRect from 'ui/hooks/useRenderedObjectRect';
+import useRenderedObjectRects from 'ui/hooks/useRenderedObjectRects';
 
 export const HighlightHovered: React.FC = () => {
-  const hovered = useProperty$(EditorStateService, 'hovered$', '');
-
-  const target = useMethodCall(RenderedObjectService, 'get', [hovered || '']);
-
-  const toViewportRect = useMethod(ViewportService, 'toViewportRect');
-
-  if (!target) return null;
-
-  return <HighlightRect type="hovered" rect={toViewportRect(target.rect)} />;
+  const hovered = useHovered();
+  const rect = useRenderedObjectRect(hovered || '');
+  const viewportRect = useMethodCall(ViewportService, 'toViewportRect', [rect]);
+  return <HighlightRect type="hovered" rect={viewportRect} />;
 };
 
 export const HighlightSelected: React.FC = () => {
-  const selected = useProperty$(EditorStateService, 'selected$');
+  const selected = useSelected();
 
-  const getObject = useMethod(RenderedObjectService, 'get');
+  const rects = useRenderedObjectRects(selected);
 
   const toViewportRect = useMethod(ViewportService, 'toViewportRect');
 
-  if (!selected) return null;
+  const rect = useMemo(() => {
+    let tl = Vector.maximin;
+    let br = Vector.minimun;
 
-  /**
-   * cannot memo follow parts because rect of object will not update reference
-   */
-  let tl = Vector.maximin;
-  let br = Vector.minimun;
+    for (const rect of rects) {
+      const { position, size } = rect;
+      if (position.x < tl.x) tl = tl.setX(position.x);
+      if (position.y < tl.y) tl = tl.setY(position.y);
+      if (position.x + size.width > br.x) br = br.setX(position.x + size.width);
+      if (position.y + size.height > br.y) br = br.setY(position.y + size.height);
+    }
 
-  for (const objectId of selected) {
-    const target = getObject(objectId);
-    if (!target) continue;
-    const { position, size } = target.rect;
-    if (position.x < tl.x) tl = tl.setX(position.x);
-    if (position.y < tl.y) tl = tl.setY(position.y);
-    if (position.x + size.width > br.x) br = br.setX(position.x + size.width);
-    if (position.y + size.height > br.y) br = br.setY(position.y + size.height);
-  }
-
-  const rect = toViewportRect(Rect.of(tl, br));
+    return toViewportRect(Rect.of(tl, br));
+  }, [rects, toViewportRect]);
 
   return <HighlightRect type="selected" rect={rect} />;
 };

@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
-import { Subscription, combineLatest } from 'rxjs';
-import { distinctUntilChanged, debounceTime, map } from 'rxjs/operators';
+import { Subscription, combineLatest, Subject } from 'rxjs';
+import { distinctUntilChanged, debounceTime, map, filter } from 'rxjs/operators';
 import { RenderingInfo } from 'gaudi';
 import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { Rect, Vector, Size } from 'base/math';
@@ -11,32 +11,31 @@ import { RectTrackerService, RectChangedEvent } from 'base/RectTrackerService';
 import { ViewportService } from 'editor/ViewportService';
 import { ViewService } from 'editor/ViewService';
 
-export interface RenderedObject {
-  id: string;
-  readonly info: RenderingInfo;
+interface RenderedObjectRectChangeEvent {
+  type: 'rendered-object-rect-change';
+  target: RenderedObject;
   rect: Rect;
-  ref: React.MutableRefObject<HTMLElement | undefined>;
 }
 
-const getRectFromElement = (e: RenderedObject) => e.rect;
+export type RenderedObjectEvent = RenderedObjectRectChangeEvent;
 
-function buildTree(
-  canvasSize: Size,
-  elements: Map<string, RenderedObject>
-): QuadTree<RenderedObject> {
-  const rect = Rect.of(Vector.zero, canvasSize);
-  const tree = new QuadTree<RenderedObject>(rect, getRectFromElement);
-  for (const [, ve] of elements) {
-    tree.insert(ve);
-  }
-  return tree;
+export interface RenderedObject {
+  readonly id: string;
+  readonly info: RenderingInfo;
+  readonly ref: React.MutableRefObject<HTMLElement | undefined>;
 }
 
 @Service()
 export class RenderedObjectService implements Initializable, Destroyable {
+  get event$() {
+    return this.event.asObservable();
+  }
+
   private renderedObjects = new Map<string, RenderedObject>();
 
   private rootRenderedObjects = new Set<RenderedObject>();
+
+  private rects = new WeakMap<RenderedObject, Rect>();
 
   private tree: QuadTree<RenderedObject>;
 
@@ -46,6 +45,8 @@ export class RenderedObjectService implements Initializable, Destroyable {
 
   private logger: Logger;
 
+  private event = new Subject<RenderedObjectEvent>();
+
   constructor(
     private rectTracker: RectTrackerService,
     private viewport: ViewportService,
@@ -53,7 +54,7 @@ export class RenderedObjectService implements Initializable, Destroyable {
     logger: LoggerService,
     initializer: InitializerService
   ) {
-    this.tree = buildTree(Size.zero, this.renderedObjects);
+    this.tree = this.buildTree(Size.zero);
     this.logger = logger.create('RenderedObjectService');
     initializer.register(this);
   }
@@ -83,10 +84,11 @@ export class RenderedObjectService implements Initializable, Destroyable {
   }
 
   add(id: string, info: RenderingInfo, ref: React.MutableRefObject<HTMLElement | undefined>) {
-    const renderedObject: RenderedObject = { id, info, ref, rect: Rect.zero };
-    this.renderedObjects.set(id, renderedObject);
-    if (info.depth === 0) this.rootRenderedObjects.add(renderedObject);
-    this.tree.insert(renderedObject);
+    const obj: RenderedObject = { id, info, ref };
+    this.renderedObjects.set(id, obj);
+    this.rects.set(obj, Rect.zero);
+    if (info.depth === 0) this.rootRenderedObjects.add(obj);
+    this.tree.insert(obj);
     /**
      * @FIXME bulk update
      */
@@ -136,8 +138,8 @@ export class RenderedObjectService implements Initializable, Destroyable {
     let width = 0;
     let height = 0;
 
-    for (const renderedObject of this.rootRenderedObjects) {
-      const { rect } = this.renderedObjects.get(renderedObject.id)!;
+    for (const obj of this.rootRenderedObjects) {
+      const rect = this.rects.get(obj) || Rect.zero;
       const rightBottom = rect.position.add(rect.size.width, rect.size.height);
       if (rightBottom.x > width) {
         width = rightBottom.x;
@@ -152,6 +154,19 @@ export class RenderedObjectService implements Initializable, Destroyable {
 
   updateCanvasSize() {
     this.viewport.setCanvasSize(this.getBoundarySize());
+  }
+
+  getRect(id: string) {
+    const target = this.renderedObjects.get(id);
+    if (!target) return Rect.zero;
+    return this.rects.get(target) || Rect.zero;
+  }
+
+  watchRect(id: string) {
+    return this.event$.pipe(
+      filter(e => e.type === 'rendered-object-rect-change' && e.target.id === id),
+      map(e => e.rect)
+    );
   }
 
   private trackingVisibles() {
@@ -187,31 +202,41 @@ export class RenderedObjectService implements Initializable, Destroyable {
   }
 
   private rebuildTree(size: Size) {
-    this.tree = buildTree(size, this.renderedObjects);
+    this.tree = this.buildTree(size);
     this.logger.trace('tree rebuilt');
   }
 
   private onRectChanged({ id, rect }: RectChangedEvent) {
-    const element = this.renderedObjects.get(id as string);
-    if (!element) {
+    const target = this.renderedObjects.get(id as string);
+    if (!target) {
       return;
     }
 
-    const nodes = this.tree.findNodes(element);
+    const nodes = this.tree.findNodes(target);
 
     // delete from tree before updating rect
     for (const node of nodes) {
-      node.delete(element);
+      node.delete(target);
     }
 
-    // offset to canvas coordinate
-    // const posInCanvas = this.viewport.pageToCanvasPoint(rect.position);
-    // element.rect = Rect.of(posInCanvas, rect.size);
-    element.rect = rect;
-    this.tree.insert(element);
+    this.rects.set(target, rect);
+    this.tree.insert(target);
 
-    if (element.info.depth === 0) {
+    if (target.info.depth === 0) {
       // this.updateCanvasSize();
     }
+
+    this.logger.trace('rect change', { id, rect: rect.toString() });
+
+    this.event.next({ type: 'rendered-object-rect-change', target, rect });
+  }
+
+  private buildTree(canvasSize: Size): QuadTree<RenderedObject> {
+    const rect = Rect.of(Vector.zero, canvasSize);
+    const tree = new QuadTree<RenderedObject>(rect, obj => this.rects.get(obj) || Rect.zero);
+    for (const [, ve] of this.renderedObjects) {
+      tree.insert(ve);
+    }
+    return tree;
   }
 }

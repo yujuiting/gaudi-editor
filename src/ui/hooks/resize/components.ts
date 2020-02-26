@@ -9,15 +9,13 @@ export interface HitboxProps {
 
 const redBackgroundColor = css`
   background-color: red;
-`;
-
-const transparentBackgroundColor = css`
-  background-color: transparent;
+  opacity: 1;
 `;
 
 export const Hitbox = styled.div<HitboxProps>`
   position: absolute;
-  ${theme.props('debug', redBackgroundColor, transparentBackgroundColor)};
+  opacity: 0;
+  ${theme.props('debug', redBackgroundColor)};
 `;
 
 const VerticalHitbox = styled(Hitbox)`

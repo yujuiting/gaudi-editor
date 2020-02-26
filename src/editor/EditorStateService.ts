@@ -71,7 +71,7 @@ export class EditorStateService {
     const currentSelected = this.getSelected();
     // prevent select repeatly
     if (currentSelected.find(objectId => objectId === id)) return;
-    this.selected.next(currentSelected.concat(id));
+    this.selected.next([...currentSelected, id]);
     this.setCurrentScope(target.info.scope);
   }
 
