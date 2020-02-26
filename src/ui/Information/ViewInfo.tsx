@@ -7,16 +7,16 @@ import { InputNumber } from 'ui/widget/inputs';
 const ViewInfo: React.FC = () => {
   const scope = useCurrentScope();
 
-  const [{ size }, updateSize] = useViewRect(scope || '');
+  const [rect, updateRect] = useViewRect(scope || '');
 
-  const setWidth = useCallback((width: number) => updateSize(size.setWidth(width)), [
-    updateSize,
-    size,
+  const setWidth = useCallback((width: number) => updateRect(rect.setWidth(width)), [
+    updateRect,
+    rect,
   ]);
 
-  const setHeight = useCallback((height: number) => updateSize(size.setHeight(height)), [
-    updateSize,
-    size,
+  const setHeight = useCallback((height: number) => updateRect(rect.setHeight(height)), [
+    updateRect,
+    rect,
   ]);
 
   function renderBody() {
@@ -31,11 +31,11 @@ const ViewInfo: React.FC = () => {
         </Field>
         <Field>
           <Label>Width</Label>
-          <InputNumber value={size.width || 0} onChange={setWidth} />
+          <InputNumber value={rect.size.width || 0} onChange={setWidth} />
         </Field>
         <Field>
           <Label>Height</Label>
-          <InputNumber value={size.height || 0} onChange={setHeight} />
+          <InputNumber value={rect.size.height || 0} onChange={setHeight} />
         </Field>
       </FieldSet>
     );

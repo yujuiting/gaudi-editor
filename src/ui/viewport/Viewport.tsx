@@ -1,15 +1,18 @@
 import React, { useRef, useEffect, useMemo } from 'react';
+import { useDrop } from 'react-dnd';
 import { Vector, Size } from 'base/math';
 import { useProperty$, useMethod, useMethodCall } from 'editor/di';
 import { ViewportService, ControlState } from 'editor/ViewportService';
-import { ViewService } from 'editor/ViewService';
 import { BlueprintService } from 'editor/BlueprintService';
 import useViewRect from 'ui/hooks/useViewRect';
-import { Viewport, Canvas } from './components';
+import { Viewport, Canvas, View } from './components';
 import IsolatedView from './IsolatedView';
 import Blueprint from './Blueprint';
 import { HighlightHovered, HighlightSelected } from './HighlightRect';
 import { EditorStateService } from 'editor/EditorStateService';
+import useResizer from 'ui/hooks/resize/useResizer';
+import useResizeArea from 'ui/hooks/resize/useResizeArea';
+import { ViewService } from 'editor/ViewService';
 
 const getCursor = (state: ControlState) => {
   switch (state) {
@@ -58,11 +61,22 @@ const ConnectedViewport: React.FC = () => {
 
   const scopes = useScopes();
 
+  const resizeView = useMethod(ViewService, 'resize');
+
+  const moveView = useMethod(ViewService, 'move');
+
+  const connect = useResizeArea({
+    group: 'view',
+    onResize: (delta, item) => resizeView(item.id as string, delta),
+    onMove: (delta, item) => moveView(item.id as string, delta),
+  });
+
   useEffect(() => {
     if (!viewportRef.current) return;
     bindRef(viewportRef.current);
+    connect(viewportRef.current);
     return () => unbindRef();
-  }, [viewportRef, bindRef, unbindRef]);
+  }, [viewportRef, bindRef, unbindRef, connect]);
 
   function renderView(scope: string) {
     return <ConnectedView key={scope} scope={scope} />;
@@ -85,18 +99,21 @@ const ConnectedView: React.FC<ConnectedViewProps> = props => {
   const { scope } = props;
   const [rect] = useViewRect(scope);
   const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
+  const renderControllers = useResizer({ id: scope, group: 'view' });
 
   return (
-    <IsolatedView
-      disablePointerEvent
+    <View
       x={rect.position.x}
       y={rect.position.y}
       width={rect.size.width}
       height={rect.size.height}
       onClick={selectScope}
     >
-      <Blueprint scope={scope} />
-    </IsolatedView>
+      <IsolatedView disablePointerEvent>
+        <Blueprint scope={scope} />
+      </IsolatedView>
+      {renderControllers()}
+    </View>
   );
 };
 

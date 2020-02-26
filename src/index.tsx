@@ -53,5 +53,3 @@ keyboard.bind(window);
   panel.open('components-and-hierarchy');
   ReactDOM.render(<App />, document.getElementById('root'));
 })();
-
-// ReactDOM.render(<div>hellp</div>, document.getElementById('root'));

@@ -39,10 +39,24 @@ export class ViewService {
     return { ...view } as const;
   }
 
-  updateViewSize(scope: string, size: Size) {
+  updateRect(scope: string, rect: Rect) {
     const view = this.views.find(view => view.scope === scope);
     if (!view) throw new Error();
-    view.rect = Rect.of(view.rect.position, size);
+    view.rect = rect;
+    this.viewUpdated.next(view);
+  }
+
+  resize(scope: string, delta: Size) {
+    const view = this.views.find(view => view.scope === scope);
+    if (!view) throw new Error();
+    view.rect = view.rect.setSize(view.rect.size.add(delta));
+    this.viewUpdated.next(view);
+  }
+
+  move(scope: string, delta: Vector) {
+    const view = this.views.find(view => view.scope === scope);
+    if (!view) throw new Error();
+    view.rect = view.rect.setPosition(view.rect.position.add(delta));
     this.viewUpdated.next(view);
   }
 

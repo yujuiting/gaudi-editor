@@ -1,7 +1,7 @@
 import { useMethod } from 'editor/di';
 import { ViewService } from 'editor/ViewService';
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Size, Rect } from 'base/math';
+import { Rect } from 'base/math';
 
 function useViewRect(scope: string) {
   const watchRect = useMethod(ViewService, 'watchRect');
@@ -11,11 +11,8 @@ function useViewRect(scope: string) {
     const subscription = value$.subscribe(setView);
     return () => subscription.unsubscribe();
   }, [value$, setView]);
-  const updateViewSize = useMethod(ViewService, 'updateViewSize');
-  return [
-    view,
-    useCallback((size: Size) => updateViewSize(scope, size), [updateViewSize, scope]),
-  ] as const;
+  const updateRect = useMethod(ViewService, 'updateRect');
+  return [view, useCallback((rect: Rect) => updateRect(scope, rect), [updateRect, scope])] as const;
 }
 
 export default useViewRect;

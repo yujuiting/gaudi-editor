@@ -1,5 +1,5 @@
 import React, { useMemo, useContext } from 'react';
-import styled, { css, ThemeContext } from 'styled-components';
+import styled, { css, ThemeContext, StyledComponent, DefaultTheme } from 'styled-components';
 import * as theme from 'base/theme';
 import { Rect } from 'base/math';
 
@@ -46,7 +46,9 @@ export interface ViewProps {
   height?: number;
 }
 
-export const View = styled.div.attrs<ViewProps>(props => ({
+export const View: StyledComponent<'div', DefaultTheme, ViewProps, never> = styled.div.attrs<
+  ViewProps
+>(props => ({
   style: {
     left: `${props.x || 0}px`,
     top: `${props.y || 0}px`,

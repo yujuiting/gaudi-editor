@@ -166,6 +166,30 @@ export class Rect {
 
   constructor(public readonly position: Vector, public readonly size: Size) {}
 
+  setSize(size: Size) {
+    return Rect.of(this.position, size);
+  }
+
+  setWidth(width: number) {
+    return this.setSize(this.size.setWidth(width));
+  }
+
+  setHeight(height: number) {
+    return this.setSize(this.size.setHeight(height));
+  }
+
+  setPosition(position: Vector) {
+    return Rect.of(position, this.size);
+  }
+
+  setX(x: number) {
+    return this.setPosition(this.position.setX(x));
+  }
+
+  setY(y: number) {
+    return this.setPosition(this.position.setY(y));
+  }
+
   contains({ x, y }: Vector) {
     if (x < this.position.x) return false;
 

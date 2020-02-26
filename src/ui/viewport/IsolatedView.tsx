@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { createPortal } from 'react-dom';
-import { View, ViewProps } from './components';
+// import { View, ViewProps } from './components';
 
 interface IframeProps {
   disablePointerEvent?: boolean;
@@ -21,7 +21,7 @@ const Iframe = styled.iframe`
   ${disablePointerEvent}
 `;
 
-type IsolatedViewProps = ViewProps & IframeProps & React.DOMAttributes<HTMLDivElement>;
+type IsolatedViewProps = IframeProps & React.DOMAttributes<HTMLDivElement>;
 
 const IsolatedView: React.FC<IsolatedViewProps> = ({ children, disablePointerEvent, ...props }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -33,10 +33,10 @@ const IsolatedView: React.FC<IsolatedViewProps> = ({ children, disablePointerEve
   }
 
   return (
-    <View {...props}>
+    <>
       <Iframe ref={iframeRef} disablePointerEvent={disablePointerEvent} />
       {renderChildren()}
-    </View>
+    </>
   );
 };
 
