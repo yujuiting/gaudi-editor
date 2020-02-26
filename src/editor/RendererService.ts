@@ -1,9 +1,10 @@
 import { Service } from 'typedi';
 import { Subscription, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
-import { Gaudi } from 'gaudi';
+// import { Gaudi } from 'gaudi';
 import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { LoggerService, Logger } from 'base/LoggerService';
+import { EditorService } from 'editor/EditorService';
 import { ProjectService, ProjectEvent } from 'editor/ProjectService';
 import { BlueprintService, BlueprintUpdatedEvent } from 'editor/BlueprintService';
 
@@ -18,7 +19,7 @@ export class RendererService implements Initializable, Destroyable {
   private logger: Logger;
 
   constructor(
-    private guaid: Gaudi,
+    private editor: EditorService,
     private project: ProjectService,
     private blueprint: BlueprintService,
     initializer: InitializerService,
@@ -41,7 +42,7 @@ export class RendererService implements Initializable, Destroyable {
 
   render(name: string) {
     const project = this.project.getCurrent();
-    this.elements.set(name, this.guaid.renderer.render(project, name));
+    this.elements.set(name, this.editor.renderer.render(project, name));
     this.updatedElement.next(name);
     this.logger.trace('render', { name });
   }

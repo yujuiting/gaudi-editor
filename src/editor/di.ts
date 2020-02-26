@@ -19,7 +19,7 @@ import { EditorPlugin } from 'editor/EditorPlugin';
 import { ViewService } from 'editor/ViewService';
 import { EditorStateService } from 'editor/EditorStateService';
 
-Container.set({ id: Gaudi, type: Gaudi });
+// Container.set({ id: Gaudi, type: Gaudi });
 
 // initialize services
 Container.get(KeybindingService);

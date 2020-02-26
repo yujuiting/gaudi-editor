@@ -3,7 +3,7 @@ import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Container } from 'typedi';
-import { InitializerService } from 'base/LifeCycle';
+import { Gaudi } from 'gaudi';
 import { KeyboardService } from 'base/KeyboardService';
 import { WidgetService } from 'editor/widget/WidgetService';
 import { ProjectService } from 'editor/ProjectService';
@@ -11,23 +11,25 @@ import widgets from './widgets';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { PanelService } from 'editor/widget/PanelService';
+import { EditorService } from 'editor/EditorService';
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
-const initializer = Container.get(InitializerService);
+const gaudi = new Gaudi();
+const editor = Container.get(EditorService);
 const keyboard = Container.get(KeyboardService);
 const widget = Container.get(WidgetService);
 const project = Container.get(ProjectService);
 const panel = Container.get(PanelService);
 
 keyboard.bind(window);
+widget.registerAll(widgets);
 
 (async () => {
-  await initializer.initializeAll();
-  widget.registerAll(widgets);
+  await editor.initialize(gaudi);
   project.setCurrent({
     blueprints: {
       default: {
