@@ -23,6 +23,7 @@ export interface RenderedObject {
   readonly id: string;
   readonly info: RenderingInfo;
   readonly ref: React.MutableRefObject<HTMLElement | undefined>;
+  readonly blueprintId: string;
 }
 
 @Service()
@@ -83,8 +84,13 @@ export class RenderedObjectService implements Initializable, Destroyable {
     }
   }
 
-  add(id: string, info: RenderingInfo, ref: React.MutableRefObject<HTMLElement | undefined>) {
-    const obj: RenderedObject = { id, info, ref };
+  add(
+    blueprintId: string,
+    info: RenderingInfo,
+    ref: React.MutableRefObject<HTMLElement | undefined>
+  ) {
+    const id = `${info.scope}-${blueprintId}`;
+    const obj: RenderedObject = { id, info, ref, blueprintId };
     this.renderedObjects.set(id, obj);
     this.rects.set(obj, Rect.zero);
     if (info.depth === 0) this.rootRenderedObjects.add(obj);
@@ -110,9 +116,9 @@ export class RenderedObjectService implements Initializable, Destroyable {
     return this.renderedObjects.get(id);
   }
 
-  getRoots(): ReadonlySet<RenderedObject> {
-    return this.rootRenderedObjects;
-  }
+  // getRoots(): ReadonlySet<RenderedObject> {
+  //   return this.rootRenderedObjects;
+  // }
 
   getFrontest(point: Vector) {
     const objects = this.findOn(point);
@@ -132,6 +138,23 @@ export class RenderedObjectService implements Initializable, Destroyable {
 
   findOn(point: Vector) {
     return this.tree.findOn(point);
+  }
+
+  // findByScope(scope: string) {
+  //   for (const obj of this.rootRenderedObjects) {
+  //     if (obj.info.scope === scope) return obj;
+  //   }
+  //   return null;
+  // }
+
+  findByBlueprintId(scope: string, blueprintId: string) {
+    /**
+     * @TODO performance
+     */
+    for (const [, obj] of this.renderedObjects) {
+      if (obj.info.scope === scope && obj.blueprintId === blueprintId) return obj;
+    }
+    return null;
   }
 
   getBoundarySize() {

@@ -13,6 +13,7 @@ const emptyComponentModule = {
 };
 
 export interface RenderingInfo {
+  readonly id: string;
   readonly type: string;
   // belong to which component blueprint
   readonly scope: string;
@@ -23,7 +24,7 @@ export interface RenderingInfo {
   readonly key: string;
 }
 
-const extractBlueprintName = (text: string) => {
+export const extractBlueprintName = (text: string) => {
   const matches = /^blueprint:(.+)/.exec(text);
   return matches && matches[1];
 };
@@ -49,28 +50,27 @@ export class Renderer {
     blueprints: Record<string, Blueprint> = {},
     scope: string,
     depth = 0,
-    parent: RenderingInfo | null = null,
-    refBlueprint?: string
+    parent: RenderingInfo | null = null
   ): React.ReactElement {
     const blueprintName = extractBlueprintName(blueprint.type);
 
-    if (blueprintName && blueprintName in blueprints) {
-      const { [blueprintName]: target, ...rest } = blueprints;
-      return this.renderBlueprint(target, rest, scope, depth, parent, blueprintName);
-    }
+    const isRef = blueprintName && blueprintName in blueprints;
+
+    const id = `element-${this.nextId++}`;
 
     const info: RenderingInfo = {
+      id,
+      key: id,
       type: blueprint.type,
       scope,
       depth,
       parent,
-      refBlueprint,
-      key: `element-${this.nextId++}`,
+      refBlueprint: blueprintName || undefined,
     };
 
     let type: ComponentType<any> | string; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    if (isHtmlTag(blueprint.type)) {
+    if (isHtmlTag(blueprint.type) || isRef) {
       type = blueprint.type;
     } else {
       const componentModule = this.container.get(blueprint.type) || emptyComponentModule;
@@ -83,7 +83,10 @@ export class Renderer {
 
     let element: React.ReactElement;
 
-    if (blueprint.children && blueprint.children.length > 0) {
+    if (isRef) {
+      const { [blueprintName!]: target, ...rest } = blueprints;
+      element = this.renderBlueprint(target, rest, scope, depth + 1, info);
+    } else if (blueprint.children && blueprint.children.length > 0) {
       const children = blueprint.children.map(child =>
         this.renderBlueprint(child, blueprints, scope, depth + 1, info)
       );

@@ -17,16 +17,16 @@ const Name = styled.div`
 `;
 
 export interface ScopeProps {
-  scopeId: string;
+  scope: string;
 }
 
 const Scope: React.FC<ScopeProps> = props => {
-  const { scopeId } = props;
-  const blueprint = useMethodCall(BlueprintService, 'getRoot', [scopeId]);
+  const { scope } = props;
+  const blueprint = useMethodCall(BlueprintService, 'getRoot', [scope]);
 
   function renderLayer(blueprint: ImmutableBlueprint) {
     return (
-      <Layer key={blueprint.id} blueprintId={blueprint.id}>
+      <Layer key={blueprint.id} scope={scope} blueprintId={blueprint.id}>
         {blueprint.children.map(renderLayer)}
       </Layer>
     );
@@ -34,7 +34,7 @@ const Scope: React.FC<ScopeProps> = props => {
 
   return (
     <Container>
-      <Name>{scopeId}</Name>
+      <Name>{scope}</Name>
       {renderLayer(blueprint)}
     </Container>
   );

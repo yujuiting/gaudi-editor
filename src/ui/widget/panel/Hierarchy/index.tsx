@@ -12,7 +12,7 @@ const Hierarchy: React.FC = () => {
   const scopes = useMethodCall(BlueprintService, 'getScopes', []);
 
   function renderScope(scope: string) {
-    return <Scope key={scope} scopeId={scope} />;
+    return <Scope key={scope} scope={scope} />;
   }
 
   return <Container>{scopes.map(renderScope)}</Container>;

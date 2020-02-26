@@ -52,6 +52,6 @@ widget.registerAll(widgets);
     metadata: { plugins: [], version: '' },
     data: {},
   });
-  panel.open('components-and-hierarchy');
   ReactDOM.render(<App />, document.getElementById('root'));
+  setTimeout(() => panel.open('components-and-hierarchy'), 100);
 })();

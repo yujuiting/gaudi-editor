@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styled, { css } from 'styled-components';
 import * as theme from 'base/theme';
 import { useMethodCall, useMethod } from 'editor/di';
 import { BlueprintService } from 'editor/BlueprintService';
 import { EditorStateService } from 'editor/EditorStateService';
+import { RenderedObjectService } from 'editor/RenderedObjectService';
 import useSelected from 'ui/hooks/useSelected';
 
 const Container = styled.div``;
@@ -28,18 +29,25 @@ const Children = styled.div`
 `;
 
 export interface LayerProps {
+  scope: string;
   blueprintId: string;
 }
 
 const Layer: React.FC<LayerProps> = props => {
-  const { blueprintId, children } = props;
+  const { scope, blueprintId, children } = props;
   const selected = useSelected();
-  const type = useMethodCall(BlueprintService, 'getType', [blueprintId]);
-  const select = useMethod(EditorStateService, 'select', [blueprintId]);
+  const blueprint = useMethodCall(BlueprintService, 'get', [blueprintId]);
+  // const type = useMethodCall(BlueprintService, 'getType', [blueprintId]);
+  // const obj = useMethodCall(RenderedObjectService, 'findByBlueprintId', [scope, blueprintId]);
+  /**
+   * @FIXME
+   */
+  const id = `${scope}-${blueprintId}`;
+  const select = useMethod(EditorStateService, 'select', [id]);
   return (
     <Container>
-      <Name onClick={select} selected={selected.includes(blueprintId)}>
-        {type}
+      <Name onClick={select} selected={selected.includes(id)}>
+        {blueprint.type}
       </Name>
       {children && <Children>{children}</Children>}
     </Container>
