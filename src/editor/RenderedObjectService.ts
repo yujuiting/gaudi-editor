@@ -62,9 +62,9 @@ export class RenderedObjectService implements Initializable, Destroyable {
 
   initialize() {
     this.subscriptions.push(
-      combineLatest(this.viewport.viewportSize$, this.viewport.location$)
+      combineLatest(this.viewport.viewportRect$, this.viewport.location$)
         .pipe(
-          map(([size, pos]) => Rect.of(pos, size)),
+          map(([rect, pos]) => Rect.of(pos, rect.size)),
           distinctUntilChanged(Rect.eq)
         )
         .subscribe(this.onVisibleRectChanged.bind(this)),

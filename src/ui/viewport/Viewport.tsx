@@ -20,7 +20,7 @@ const getCursor = (state: ControlState) => {
       return 'grab';
     case ControlState.Panning:
       return 'grabbing';
-    case ControlState.CanPinch:
+    case ControlState.CanZoom:
     case ControlState.ZoomingIn:
       return 'zoom-in';
     case ControlState.ZoomingOut:

@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Container } from 'typedi';
 import { Gaudi } from 'gaudi';
+import { MouseService } from 'base/MouseService';
 import { KeyboardService } from 'base/KeyboardService';
 import { WidgetService } from 'editor/widget/WidgetService';
 import { ProjectService } from 'editor/ProjectService';
@@ -20,11 +21,13 @@ serviceWorker.unregister();
 
 const gaudi = new Gaudi();
 const editor = Container.get(EditorService);
+const mouse = Container.get(MouseService);
 const keyboard = Container.get(KeyboardService);
 const widget = Container.get(WidgetService);
 const project = Container.get(ProjectService);
 const panel = Container.get(PanelService);
 
+mouse.bind(window);
 keyboard.bind(window);
 widget.registerAll(widgets);
 

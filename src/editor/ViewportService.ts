@@ -1,9 +1,11 @@
 import { Service } from 'typedi';
-import { fromEvent, BehaviorSubject, Subscription, Subject } from 'rxjs';
+import { BehaviorSubject, Subscription } from 'rxjs';
 import { takeUntil, switchMap, map } from 'rxjs/operators';
+import { FSM } from 'base/FSM';
 import { Destroyable, InitializerService } from 'base/LifeCycle';
 import { getRect } from 'base/dom';
 import { Vector, Size, clamp, fixPrecision, Rect } from 'base/math';
+import { MouseService } from 'base/MouseService';
 import { KeybindingService } from 'base/KeybindingService';
 import { RectTrackerService } from 'base/RectTrackerService';
 import { LoggerService, Logger } from 'base/LoggerService';
@@ -11,10 +13,16 @@ import { LoggerService, Logger } from 'base/LoggerService';
 export enum ControlState {
   Default = 'Default',
   CanPan = 'CanPan',
-  CanPinch = 'CanPinch',
+  CanZoom = 'CanZoom',
   Panning = 'Panning',
   ZoomingIn = 'ZoomingIn',
   ZoomingOut = 'ZoomingOut',
+}
+
+interface ControlData {
+  panning?: Subscription;
+  zooming?: Subscription;
+  lastMouseLocation: Vector;
 }
 
 export const VIEWPORT_SCALE_PRECISION = 4;
@@ -26,7 +34,7 @@ export const MAX_VIEWPORT_SCALE = 8;
 @Service()
 export class ViewportService implements Destroyable {
   get controlState$() {
-    return this.controlState.asObservable();
+    return this.control.current$;
   }
 
   get scale$() {
@@ -41,27 +49,11 @@ export class ViewportService implements Destroyable {
     return this.canvasSize.asObservable();
   }
 
-  get viewportSize$() {
-    return this.viewportSize.asObservable();
+  get viewportRect$() {
+    return this.viewportRect.asObservable();
   }
 
-  get mousedown$() {
-    return this.mousedown.asObservable();
-  }
-
-  get mouseup$() {
-    return this.mouseup.asObservable();
-  }
-
-  get mousemove$() {
-    return this.mousemove.asObservable();
-  }
-
-  get mousedrag$() {
-    return this.mousedrag.asObservable();
-  }
-
-  private controlState = new BehaviorSubject(ControlState.Default);
+  private control: FSM<ControlState, ControlData>;
 
   private scale = new BehaviorSubject(1);
 
@@ -69,101 +61,109 @@ export class ViewportService implements Destroyable {
 
   private canvasSize = new BehaviorSubject(Size.of(2000, 2000));
 
-  private viewportSize = new BehaviorSubject(Size.zero);
-
-  private viewportCenter = Vector.zero;
-
-  private mousedown = new Subject<MouseEvent>();
-
-  private mouseup = new Subject<MouseEvent>();
-
-  private mousemove = new Subject<MouseEvent>();
-
-  private mousedrag = new Subject<MouseEvent>();
-
-  /**
-   * in page coordinate
-   */
-  private lastMouseLocation = Vector.zero;
+  private viewportRect = new BehaviorSubject(Rect.zero);
 
   private target: HTMLElement | null = null;
-
-  private onMouseDown = (e: MouseEvent) => {
-    if (this.getControlState() !== ControlState.CanPan) {
-      return;
-    }
-
-    this.lastMouseLocation = Vector.of(e.pageX, e.pageY);
-  };
-
-  private onMouseUp = () => {
-    if (this.getControlState() !== ControlState.Panning) {
-      return;
-    }
-
-    this.setControlState(ControlState.CanPan);
-  };
-
-  private onDrag = (e: MouseEvent) => {
-    switch (this.getControlState()) {
-      case ControlState.CanPan:
-      case ControlState.Panning:
-        break;
-      default:
-        return;
-    }
-    this.setControlState(ControlState.Panning);
-    const current = Vector.of(e.pageX, e.pageY);
-    const delta = current.sub(this.lastMouseLocation);
-    this.pan(delta);
-    this.lastMouseLocation = current;
-  };
-
-  private onWheel = (e: WheelEvent) => {
-    switch (this.getControlState()) {
-      case ControlState.CanPinch:
-      case ControlState.ZoomingIn:
-      case ControlState.ZoomingOut:
-        break;
-      default:
-        return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-    const current = Vector.of(e.pageX, e.pageY);
-    this.zoom(e.deltaY * 0.01, current);
-
-    if (e.deltaY > 0) {
-      this.setControlState(ControlState.ZoomingIn);
-    } else {
-      this.setControlState(ControlState.ZoomingOut);
-    }
-  };
 
   private subscriptions: Subscription[] = [];
 
   private logger: Logger;
 
   constructor(
-    keybindingService: KeybindingService,
+    private mouse: MouseService,
+    private rectTracker: RectTrackerService,
+    keybinding: KeybindingService,
     logger: LoggerService,
-    initializer: InitializerService,
-    private rectTracker: RectTrackerService
+    initializer: InitializerService
   ) {
     this.logger = logger.create('ViewportService');
 
-    keybindingService.define({
+    this.control = new FSM<ControlState, ControlData>(
+      [
+        {
+          name: ControlState.Default,
+          next: [ControlState.CanPan, ControlState.CanZoom],
+          onEnter: ({ data }) => {
+            if (data.panning) {
+              data.panning.unsubscribe();
+              data.panning = undefined;
+            }
+            if (data.zooming) {
+              data.zooming.unsubscribe();
+              data.zooming = undefined;
+            }
+          },
+        },
+        {
+          name: ControlState.CanPan,
+          next: [ControlState.Panning, ControlState.Default],
+          onEnter: ({ data }) => {
+            if (!this.target) return;
+
+            data.lastMouseLocation = mouse.location;
+
+            const drag = this.mouse.watchDown(this.getViewportRect()).pipe(
+              switchMap(() => this.mouse.move$),
+              takeUntil(this.mouse.up$)
+            );
+
+            data.panning = drag.subscribe(e => {
+              const current = Vector.of(e.pageX, e.pageY);
+              const delta = current.sub(data.lastMouseLocation);
+              this.pan(delta);
+              data.lastMouseLocation = current;
+            });
+          },
+        },
+        {
+          name: ControlState.Panning,
+          next: [ControlState.CanPan, ControlState.Default],
+        },
+        {
+          name: ControlState.CanZoom,
+          next: [ControlState.ZoomingIn, ControlState.ZoomingOut, ControlState.Default],
+          onEnter: e => {
+            if (!this.target) return;
+
+            e.data.zooming = this.mouse.wheel$.subscribe(e => {
+              e.preventDefault();
+              e.stopPropagation();
+              const current = Vector.of(e.pageX, e.pageY);
+              this.zoom(e.deltaY * 0.01, current);
+
+              if (e.deltaY > 0) {
+                this.control.transit(ControlState.ZoomingIn);
+              } else {
+                this.control.transit(ControlState.ZoomingOut);
+              }
+            });
+          },
+        },
+        {
+          name: ControlState.ZoomingIn,
+          next: [ControlState.CanZoom, ControlState.ZoomingOut, ControlState.Default],
+        },
+        {
+          name: ControlState.ZoomingOut,
+          next: [ControlState.CanZoom, ControlState.ZoomingIn, ControlState.Default],
+        },
+      ],
+      ControlState.Default,
+      { lastMouseLocation: Vector.zero }
+    );
+
+    keybinding.define({
       id: 'pan',
       parts: ['Space'],
-      onEnter: () => this.setControlState(ControlState.CanPan),
-      onLeave: () => this.setControlState(ControlState.Default),
+      onEnter: () => this.control.transit(ControlState.CanPan),
+      onLeave: () => this.control.transit(ControlState.Default),
     });
 
-    keybindingService.define({
+    keybinding.define({
       id: 'pinch',
       parts: ['Alt'],
-      onEnter: () => this.setControlState(ControlState.CanPinch),
-      onLeave: () => this.setControlState(ControlState.Default),
+      onEnter: () => this.control.transit(ControlState.CanZoom),
+      onLeave: () => this.control.transit(ControlState.Default),
     });
 
     initializer.register(this);
@@ -174,38 +174,18 @@ export class ViewportService implements Destroyable {
   }
 
   bind(target: HTMLElement) {
-    if (this.target !== target) {
-      this.unbind();
-    }
+    if (this.target) this.unbind();
 
     this.logger.info('bind to target');
 
     this.target = target;
 
-    const mousedown$ = fromEvent<MouseEvent>(target, 'mousedown');
-    const mouseup$ = fromEvent<MouseEvent>(window, 'mouseup');
-    const mousemove$ = fromEvent<MouseEvent>(window, 'mousemove');
-    const wheel$ = fromEvent<WheelEvent>(target, 'wheel', { passive: false, capture: true });
-
     this.subscriptions.push(
-      mousedown$.subscribe(this.mousedown),
-      mouseup$.subscribe(this.mouseup),
-      mousemove$.subscribe(this.mousemove),
-      mousedown$
-        .pipe(switchMap(() => mousemove$.pipe(takeUntil(mouseup$))))
-        .subscribe(this.mousedrag),
-      this.mousedown.subscribe(this.onMouseDown),
-      mouseup$.subscribe(this.onMouseUp), // bind to window
-      this.mousedrag.subscribe(this.onDrag),
-      wheel$.subscribe(this.onWheel),
       this.rectTracker
         .observe('viewport')
-        .pipe(map(e => e.rect.size))
-        .subscribe(this.viewportSize)
+        .pipe(map(e => e.rect))
+        .subscribe(this.viewportRect)
     );
-
-    const { width, height } = target.getBoundingClientRect();
-    this.viewportCenter = Vector.of(width / 2, height / 2);
 
     this.rectTracker.track('viewport', () => getRect(target));
 
@@ -213,20 +193,14 @@ export class ViewportService implements Destroyable {
   }
 
   unbind() {
+    if (!this.target) return;
     this.subscriptions.forEach(sub => sub.unsubscribe());
     this.target = null;
     this.rectTracker.untrack('viewport');
   }
 
-  setControlState(controlState: ControlState) {
-    if (this.getControlState() === controlState) {
-      return;
-    }
-    this.controlState.next(controlState);
-  }
-
   getControlState() {
-    return this.controlState.value;
+    return this.control.getCurrent();
   }
 
   getCanvasSize() {
@@ -235,6 +209,10 @@ export class ViewportService implements Destroyable {
 
   setCanvasSize(size: Size) {
     this.canvasSize.next(size);
+  }
+
+  getViewportRect() {
+    return this.viewportRect.value;
   }
 
   /**
@@ -275,7 +253,7 @@ export class ViewportService implements Destroyable {
     this.setLocation(this.getLocation().add(canvasDelta));
   }
 
-  zoom(delta: number, pivot = this.viewportCenter) {
+  zoom(delta: number, pivot: Vector) {
     const scale = this.getScale();
 
     if (delta > 0 && scale >= MAX_VIEWPORT_SCALE) {

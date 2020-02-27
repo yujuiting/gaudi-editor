@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 import { BehaviorSubject, empty } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+import { MouseService } from 'base/MouseService';
 import { ViewportService, ControlState, mapMouseEventToCanvasPoint } from 'editor/ViewportService';
 import { RenderedObjectService } from 'editor/RenderedObjectService';
 import { KeybindingService } from 'base/KeybindingService';
@@ -30,11 +31,12 @@ export class EditorStateService {
   constructor(
     private renderedObject: RenderedObjectService,
     viewport: ViewportService,
-    keybinding: KeybindingService
+    keybinding: KeybindingService,
+    mouse: MouseService
   ) {
     viewport.controlState$
       .pipe(
-        switchMap(state => (state === ControlState.Default ? viewport.mousemove$ : empty())),
+        switchMap(state => (state === ControlState.Default ? mouse.move$ : empty())),
         mapMouseEventToCanvasPoint(viewport),
         map(point => renderedObject.getFrontest(point)),
         map(object => object?.id)
@@ -42,7 +44,7 @@ export class EditorStateService {
       .subscribe(this.hovered);
 
     viewport.controlState$
-      .pipe(switchMap(state => (state === ControlState.Default ? viewport.mousedown$ : empty())))
+      .pipe(switchMap(state => (state === ControlState.Default ? mouse.down$ : empty())))
       .subscribe(this.onViewportMouseDown.bind(this));
 
     keybinding.define({

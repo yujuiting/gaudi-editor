@@ -29,7 +29,7 @@ export class KeybindingService {
       // .pipe(distinct(e => e.code, keyboardService.keyup$))
       .subscribe(e => this.onKeydown(e));
 
-    keyboardService.keyup$.subscribe(e => this.onKeyup(e));
+    keyboardService.keyup$.subscribe(() => this.onKeyup());
   }
 
   define(keybinding: Keybinding) {
@@ -38,7 +38,6 @@ export class KeybindingService {
 
   private onKeydown(e: KeyboardEvent) {
     const { code, metaKey, altKey, ctrlKey, shiftKey } = e;
-    console.log('onKeydown', { code, metaKey, altKey, ctrlKey, shiftKey });
     if (metaKey) this.pushBuffer('Meta');
     if (altKey) this.pushBuffer('Alt');
     if (ctrlKey) this.pushBuffer('Ctrl');
@@ -52,14 +51,11 @@ export class KeybindingService {
       }
     }
     if (this.current) {
-      this.logger.trace('prevent default');
       e.preventDefault();
     }
   }
 
-  private onKeyup(e: KeyboardEvent) {
-    const { code, metaKey, altKey, ctrlKey, shiftKey } = e;
-    console.log('onKeyup', { code, metaKey, altKey, ctrlKey, shiftKey });
+  private onKeyup() {
     this.clearBuffer();
   }
 

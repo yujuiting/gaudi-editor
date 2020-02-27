@@ -2,11 +2,12 @@ import React from 'react';
 import { map } from 'rxjs/operators';
 import { useObservable } from 'rxjs-hooks';
 import { Vector } from 'base/math';
+import { MouseService } from 'base/MouseService';
 import { ViewportService } from 'editor/ViewportService';
 import { useMethod, useProperty } from 'editor/di';
 
 const CursorLocation: React.FC = () => {
-  const mousemove$ = useProperty(ViewportService, 'mousemove$');
+  const mousemove$ = useProperty(MouseService, 'move$');
   const pageToCanvasPoint = useMethod(ViewportService, 'pageToCanvasPoint');
 
   const { x, y } = useObservable(
