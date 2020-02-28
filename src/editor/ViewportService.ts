@@ -100,10 +100,10 @@ export class ViewportService implements Destroyable {
           onEnter: ({ data }) => {
             if (!this.target) return;
 
-            data.lastMouseLocation = mouse.location;
+            data.lastMouseLocation = mouse.getLocation();
 
-            const drag = this.mouse.watchDown(this.getViewportRect()).pipe(
-              switchMap(() => this.mouse.move$),
+            const drag = this.mouse.observeDown(this.getViewportRect()).pipe(
+              switchMap(() => this.mouse.observeMove(this.getViewportRect())),
               takeUntil(this.mouse.up$)
             );
 
@@ -125,7 +125,7 @@ export class ViewportService implements Destroyable {
           onEnter: e => {
             if (!this.target) return;
 
-            e.data.zooming = this.mouse.wheel$.subscribe(e => {
+            e.data.zooming = this.mouse.observeWheel(this.getViewportRect()).subscribe(e => {
               e.preventDefault();
               e.stopPropagation();
               const current = Vector.of(e.pageX, e.pageY);

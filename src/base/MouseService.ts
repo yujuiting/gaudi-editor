@@ -1,10 +1,14 @@
 import { Service } from 'typedi';
-import { fromEvent, Subject, Subscription } from 'rxjs';
-import { filter } from 'rxjs/operators';
+import { fromEvent, Subject, Subscription, BehaviorSubject } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import { Rect, Vector } from 'base/math';
 
 function getPagePoint(e: MouseEvent) {
   return Vector.of(e.pageX, e.pageY);
+}
+
+interface Draggable {
+  target: HTMLElement;
 }
 
 @Service()
@@ -25,8 +29,8 @@ export class MouseService {
     return this.wheel.asObservable();
   }
 
-  get location() {
-    return this._location;
+  get location$() {
+    return this.location.asObservable();
   }
 
   private down = new Subject<MouseEvent>();
@@ -37,7 +41,7 @@ export class MouseService {
 
   private wheel = new Subject<WheelEvent>();
 
-  private _location = Vector.zero;
+  private location = new BehaviorSubject(Vector.zero);
 
   private target: HTMLElement | null = null;
 
@@ -51,8 +55,12 @@ export class MouseService {
       fromEvent<MouseEvent>(target, 'mouseup', options).subscribe(this.up),
       fromEvent<MouseEvent>(target, 'mousemove', options).subscribe(this.move),
       fromEvent<WheelEvent>(target, 'wheel', options).subscribe(this.wheel),
-      this.move$.subscribe(e => (this._location = getPagePoint(e)))
+      this.move.pipe(map(getPagePoint)).subscribe(this.location)
     );
+  }
+
+  getLocation() {
+    return this.location.value;
   }
 
   unbind() {
@@ -60,19 +68,19 @@ export class MouseService {
     this.target = null;
   }
 
-  watchDown(pageRect: Rect) {
+  observeDown(pageRect: Rect) {
     return this.down.pipe(filter(e => pageRect.contains(getPagePoint(e))));
   }
 
-  watchUp(pageRect: Rect) {
+  observeUp(pageRect: Rect) {
     return this.up.pipe(filter(e => pageRect.contains(getPagePoint(e))));
   }
 
-  watchMove(pageRect: Rect) {
+  observeMove(pageRect: Rect) {
     return this.move.pipe(filter(e => pageRect.contains(getPagePoint(e))));
   }
 
-  watchWheel(pageRect: Rect) {
+  observeWheel(pageRect: Rect) {
     return this.wheel.pipe(filter(e => pageRect.contains(getPagePoint(e))));
   }
 }

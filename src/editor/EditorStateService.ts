@@ -34,9 +34,11 @@ export class EditorStateService {
     keybinding: KeybindingService,
     mouse: MouseService
   ) {
-    viewport.controlState$
+    combineLatest(viewport.controlState$, viewport.viewportRect$)
       .pipe(
-        switchMap(state => (state === ControlState.Default ? mouse.move$ : empty())),
+        switchMap(([state, rect]) =>
+          state === ControlState.Default ? mouse.observeDown(rect) : empty()
+        ),
         mapMouseEventToCanvasPoint(viewport),
         map(point => element.getFrontest(point)),
         map(object => object?.id)
@@ -46,7 +48,7 @@ export class EditorStateService {
     combineLatest(viewport.controlState$, viewport.viewportRect$)
       .pipe(
         switchMap(([state, rect]) =>
-          state === ControlState.Default ? mouse.watchDown(rect) : empty()
+          state === ControlState.Default ? mouse.observeDown(rect) : empty()
         )
       )
       .subscribe(this.onViewportMouseDown.bind(this));
