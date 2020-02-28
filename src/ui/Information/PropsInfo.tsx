@@ -1,37 +1,40 @@
 import React, { useMemo } from 'react';
 import * as object from 'base/object';
-import builtInMetadata from 'editor/built-in-metadata';
 import { FieldSet, Legend, Field, Label } from 'ui/components/Form';
-import PropEditor from 'ui/widget/PropEditor';
+import useMetadata from 'ui/hooks/useMetadata';
 import useSelected from 'ui/hooks/useSelected';
 import useBlueprint from 'ui/hooks/useBlueprint';
+import PropEditor from './PropEditor';
 
 interface PropsInfoContentProps {
   selected: string;
+  category: string;
+  showInfo?: boolean;
 }
 
 const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
-  const { selected } = props;
+  const { selected, category, showInfo } = props;
 
   const blueprint = useBlueprint(selected);
 
-  const metadata = useMemo(() => builtInMetadata[blueprint.type], [blueprint]);
+  const metadata = useMetadata(blueprint.type);
 
   const groups = useMemo(() => {
     const result = new Map<string, string[]>();
-    if (!metadata || !metadata.props) return result;
+    if (!metadata.props) return result;
     // make sure default is first group
     result.set('default', []);
     const allKeys = object.keys(metadata.props);
     for (const key of allKeys) {
-      if (/^style./.test(key)) continue;
-      const groupName = metadata.props[key].uiGroup || 'default';
+      const propMetadata = metadata.props[key];
+      if (propMetadata.category !== category) continue;
+      const groupName = metadata.props[key].group || 'default';
       const group = result.get(groupName) || [];
       result.set(groupName, group);
       group.push(key);
     }
     return result;
-  }, [metadata]);
+  }, [metadata, category]);
 
   function renderProp(propKey: string) {
     return (
@@ -46,6 +49,7 @@ const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
 
   function renderGroup(groupName: string) {
     const keys = groups.get(groupName)!;
+    if (keys.length === 0) return null;
     return (
       <FieldSet key={groupName}>
         <Legend>{groupName}</Legend>
@@ -54,12 +58,8 @@ const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
     );
   }
 
-  function renderBody() {
-    return Array.from(groups.keys()).map(renderGroup);
-  }
-
-  return (
-    <>
+  function renderInfo() {
+    return (
       <FieldSet>
         <Legend>Info</Legend>
         <Field>
@@ -71,12 +71,29 @@ const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
           {blueprint.id}
         </Field>
       </FieldSet>
+    );
+  }
+
+  function renderBody() {
+    return Array.from(groups.keys()).map(renderGroup);
+  }
+
+  return (
+    <>
+      {showInfo && renderInfo()}
       {renderBody()}
     </>
   );
 };
 
-const PropsInfo: React.FC = () => {
+interface Props {
+  category: string;
+  showInfo?: boolean;
+}
+
+const PropsInfo: React.FC<Props> = props => {
+  const { category, showInfo } = props;
+
   const [selected, ...restSelected] = useSelected();
 
   function renderBody() {
@@ -84,7 +101,7 @@ const PropsInfo: React.FC = () => {
 
     if (!selected) return 'No selection';
 
-    return <PropsInfoContent selected={selected} />;
+    return <PropsInfoContent selected={selected} category={category} showInfo={showInfo} />;
   }
 
   return <>{renderBody()}</>;

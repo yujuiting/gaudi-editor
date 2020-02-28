@@ -13,6 +13,10 @@ export class EditorService {
     return this.gaudi.plugins;
   }
 
+  get container() {
+    return this.gaudi.container;
+  }
+
   private gaudi!: Gaudi;
 
   constructor(private editorPlugin: EditorPlugin, private initializer: InitializerService) {}
@@ -20,6 +24,7 @@ export class EditorService {
   async initialize(gaudi: Gaudi) {
     this.gaudi = gaudi;
     this.gaudi.plugins.providePlugin(this.editorPlugin);
+    await this.gaudi.container.loadAll();
     await this.initializer.initializeAll();
   }
 }

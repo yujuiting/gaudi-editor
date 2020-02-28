@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Subscription } from 'rxjs';
 import { Rect } from 'base/math';
 import { useMethod } from 'editor/di';
-import { RenderedObjectService } from 'editor/RenderedObjectService';
+import { ElementService } from 'editor/ElementService';
 
 export function useRenderedObjectRects(ids: string[]) {
-  const getRect = useMethod(RenderedObjectService, 'getRect');
-  const watchRect = useMethod(RenderedObjectService, 'watchRect');
+  const getRect = useMethod(ElementService, 'getRect');
+  const watchRect = useMethod(ElementService, 'watchRect');
   const [rects, setRects] = useState<Rect[]>([]);
   useEffect(() => {
     const result: Rect[] = [];

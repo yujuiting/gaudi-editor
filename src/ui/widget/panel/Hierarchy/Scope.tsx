@@ -1,17 +1,15 @@
 import React from 'react';
 import styled from 'styled-components';
 import * as theme from 'base/theme';
-import { useMethodCall } from 'editor/di';
+import { useMethodCall, useMethod } from 'editor/di';
 import { BlueprintService, ImmutableBlueprint } from 'editor/BlueprintService';
 import Layer from './Layer';
+import { EditorStateService } from 'editor/EditorStateService';
 
-const Container = styled.div`
-  :not(:last-child) {
-    border-bottom: 1px dotted;
-  }
-`;
+const Container = styled.div``;
 
 const Name = styled.div`
+  cursor: pointer;
   padding: 8px;
   background-color: ${theme.get('component.input.hovered.background')};
 `;
@@ -23,6 +21,7 @@ export interface ScopeProps {
 const Scope: React.FC<ScopeProps> = props => {
   const { scope } = props;
   const blueprint = useMethodCall(BlueprintService, 'getRoot', [scope]);
+  const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
 
   function renderLayer(blueprint: ImmutableBlueprint) {
     return (
@@ -34,7 +33,7 @@ const Scope: React.FC<ScopeProps> = props => {
 
   return (
     <Container>
-      <Name>{scope}</Name>
+      <Name onClick={selectScope}>{scope}</Name>
       {renderLayer(blueprint)}
     </Container>
   );

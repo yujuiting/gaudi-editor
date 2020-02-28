@@ -12,12 +12,13 @@ import { ProjectService } from 'editor/ProjectService';
 import { BlueprintService } from 'editor/BlueprintService';
 import { OperatorService } from 'editor/OperatorService';
 import { RendererService } from 'editor/RendererService';
-import { RenderedObjectService } from 'editor/RenderedObjectService';
+import { ElementService } from 'editor/ElementService';
 import { WidgetService } from 'editor/widget/WidgetService';
 import { PanelService } from 'editor/widget/PanelService';
 import { EditorPlugin } from 'editor/EditorPlugin';
 import { ViewService } from 'editor/ViewService';
 import { EditorStateService } from 'editor/EditorStateService';
+import { ComponentService } from 'editor/ComponentService';
 
 // Container.set({ id: Gaudi, type: Gaudi });
 
@@ -28,7 +29,7 @@ Container.get(ProjectService);
 Container.get(BlueprintService);
 Container.get(OperatorService);
 Container.get(RendererService);
-Container.get(RenderedObjectService);
+Container.get(ElementService);
 Container.get(WidgetService);
 Container.get(PanelService);
 Container.get(EditorPlugin);

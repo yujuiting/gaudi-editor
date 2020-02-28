@@ -14,12 +14,15 @@ import * as serviceWorker from './serviceWorker';
 import { PanelService } from 'editor/widget/PanelService';
 import { EditorService } from 'editor/EditorService';
 
+import * as StackModule from 'components/Stack.gaudi';
+import * as TextModule from 'components/Text.gaudi';
+
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
-const gaudi = new Gaudi();
+const gaudi = new Gaudi({ componentModules: [StackModule, TextModule] });
 const editor = Container.get(EditorService);
 const mouse = Container.get(MouseService);
 const keyboard = Container.get(KeyboardService);
@@ -36,7 +39,7 @@ widget.registerAll(widgets);
   project.setCurrent({
     blueprints: {
       default: {
-        type: 'div',
+        type: 'Stack',
         children: [
           {
             type: 'img',
@@ -46,6 +49,7 @@ widget.registerAll(widgets);
             },
           },
           { type: 'a', props: { href: '#', children: 'asd' } },
+          { type: 'Text', props: { children: 'Hello' } },
           { type: 'blueprint:button' },
         ],
       },

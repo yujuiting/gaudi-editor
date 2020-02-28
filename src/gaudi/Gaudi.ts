@@ -1,10 +1,10 @@
-import { ComponentModule } from './ComponentModule';
+import { ComponentModule, getComponentName } from './ComponentModule';
 import { Container } from './Container';
 import { Plugin, Plugins } from './Plugin';
 import { Renderer } from './Renderer';
 
 export interface GaudiConfig {
-  componentModules?: { [id: string]: ComponentModule };
+  componentModules?: ComponentModule[];
   plugins?: Plugin[];
   providers?: {
     container?: Container<ComponentModule>;
@@ -20,19 +20,19 @@ export class Gaudi {
 
   public readonly renderer: Renderer;
 
-  constructor({ componentModules = {}, plugins = [], providers = {} }: GaudiConfig = {}) {
+  constructor({ componentModules = [], plugins = [], providers = {} }: GaudiConfig = {}) {
     this.container = providers.container || new Container();
 
     this.plugins = providers.plugins || new Plugins(this.container);
 
     this.renderer = providers.renderer || new Renderer(this.container, this.plugins);
 
-    for (const id in componentModules) {
-      const componentModule = componentModules[id];
+    for (const componentModule of componentModules) {
+      const name = getComponentName(componentModule);
       if (typeof componentModule === 'function') {
-        this.container.provideFactory(id, componentModule);
+        this.container.provideFactory(name, componentModule);
       } else {
-        this.container.provide(id, componentModule);
+        this.container.provide(name, componentModule);
       }
     }
 

@@ -1,13 +1,20 @@
+declare module 'gaudi/ComponentModule' {
+  export interface ComponentModule {
+    metadata?: ComponentMetadata;
+  }
+}
+
 export interface ComponentMetadata {
   props?: Record<string, PropMetadata>;
 }
 
 interface InternalPropMetadata<Type extends string, DefaultValue> {
+  category: string;
+  group?: string;
+  label?: string;
   type: Type;
   defaultValue?: DefaultValue;
   options?: { label: string; value: DefaultValue; default?: boolean }[];
-  uiGroup?: string;
-  uiLabel?: string;
 }
 
 export type PropMetadata =

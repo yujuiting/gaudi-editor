@@ -2,46 +2,89 @@ import { ComponentMetadata, PropMetadata } from 'editor/type';
 
 const defaultStyleProps: Record<string, PropMetadata> = {
   // transform
-  'style.width': { type: 'length', uiGroup: 'transform' },
-  'style.height': { type: 'length', uiGroup: 'transform' },
+  'style.width': { category: 'style', group: 'transform', label: 'width', type: 'length' },
+  'style.height': { category: 'style', group: 'transform', label: 'height', type: 'length' },
   // background
-  'style.backgroundColor': { type: 'color', uiGroup: 'background' },
+  'style.backgroundColor': {
+    category: 'style',
+    group: 'background',
+    label: 'color',
+    type: 'color',
+  },
   // typography
-  'style.fontSize': { type: 'length', uiGroup: 'typography' },
-  'style.lineHeight': { type: 'length', uiGroup: 'typography' },
+  'style.fontSize': { category: 'style', group: 'typography', label: 'fontSize', type: 'length' },
+  'style.lineHeight': {
+    category: 'style',
+    group: 'typography',
+    label: 'lineHeight',
+    type: 'length',
+  },
   'style.textAlign': {
+    category: 'style',
+    group: 'typography',
+    label: 'textAlign',
     type: 'string',
     options: [
       { label: 'left', value: 'left' },
       { label: 'center', value: 'center' },
       { label: 'right', value: 'right' },
     ],
-    uiGroup: 'typography',
   },
-  'style.color': { type: 'color', uiGroup: 'typography' },
+  'style.color': { category: 'style', group: 'typography', label: 'color', type: 'color' },
   // margin
-  'style.marginTop': { type: 'length', uiGroup: 'margin' },
-  'style.marginBottom': { type: 'length', uiGroup: 'margin' },
-  'style.marginLeft': { type: 'length', uiGroup: 'margin' },
-  'style.marginRight': { type: 'length', uiGroup: 'margin' },
+  'style.marginTop': { category: 'style', group: 'margin', label: 'Top', type: 'length' },
+  'style.marginBottom': {
+    category: 'style',
+    group: 'margin',
+    label: 'Bottom',
+    type: 'length',
+  },
+  'style.marginLeft': { category: 'style', group: 'margin', label: 'Left', type: 'length' },
+  'style.marginRight': { category: 'style', group: 'margin', label: 'Right', type: 'length' },
   // padding
-  'style.paddingTop': { type: 'length', uiGroup: 'padding' },
-  'style.paddingBottom': { type: 'length', uiGroup: 'padding' },
-  'style.paddingLeft': { type: 'length', uiGroup: 'padding' },
-  'style.paddingRight': { type: 'length', uiGroup: 'padding' },
+  'style.paddingTop': { category: 'style', group: 'padding', label: 'Top', type: 'length' },
+  'style.paddingBottom': {
+    category: 'style',
+    group: 'padding',
+    label: 'Bottom',
+    type: 'length',
+  },
+  'style.paddingLeft': {
+    category: 'style',
+    group: 'padding',
+    label: 'Left',
+    type: 'length',
+  },
+  'style.paddingRight': {
+    category: 'style',
+    group: 'padding',
+    label: 'Right',
+    type: 'length',
+  },
   // border
-  'style.boarderTop': { type: 'border', uiGroup: 'border' },
-  'style.boarderBottom': { type: 'border', uiGroup: 'border' },
-  'style.boarderLeft': { type: 'border', uiGroup: 'border' },
-  'style.boarderRight': { type: 'border', uiGroup: 'border' },
+  'style.boarderTop': { category: 'style', group: 'border', label: 'Top', type: 'border' },
+  'style.boarderBottom': {
+    category: 'style',
+    group: 'border',
+    label: 'Bottom',
+    type: 'border',
+  },
+  'style.boarderLeft': { category: 'style', group: 'border', label: 'Left', type: 'border' },
+  'style.boarderRight': {
+    category: 'style',
+    group: 'border',
+    label: 'Right',
+    type: 'border',
+  },
 };
 
 export default {
   img: {
     props: {
-      src: { type: 'string' },
-      alt: { type: 'string' },
+      src: { category: 'prop', type: 'string' },
+      alt: { category: 'prop', type: 'string' },
       loading: {
+        category: 'prop',
         type: 'string',
         options: [
           { label: 'eager', value: 'eager', default: true },
@@ -53,8 +96,9 @@ export default {
   },
   a: {
     props: {
-      href: { type: 'string' },
+      href: { category: 'prop', type: 'string' },
       target: {
+        category: 'prop',
         type: 'string',
         defaultValue: '_self',
         options: [
@@ -64,13 +108,13 @@ export default {
           { label: 'top', value: '_top' },
         ],
       },
-      children: { type: 'string', uiLabel: 'text' },
+      children: { category: 'prop', type: 'string', label: 'text' },
       ...defaultStyleProps,
     },
   },
   button: {
     props: {
-      children: { type: 'string', uiLabel: 'text' },
+      children: { category: 'prop', type: 'string', label: 'text' },
       ...defaultStyleProps,
     },
   },

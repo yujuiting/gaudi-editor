@@ -7,13 +7,7 @@ import { WidgetService } from 'editor/widget/WidgetService';
 
 function getLabel(propKey: string) {
   return propKey
-    .replace('style.', '')
-    .replace(
-      // safari does not support positive lookbehind ?<= operator
-      // /([A-Z]|(?<=\D)\d)/g,
-      /([A-Z])/g,
-      letter => ` ${letter.toLowerCase()}`
-    )
+    .replace(/([A-Z])/g, letter => ` ${letter.toLowerCase()}`)
     .replace(/\D\d/, letter => `${letter[0]} ${letter[1]}`);
 }
 
@@ -27,7 +21,7 @@ const PropEditor: React.FC<PropEditorProps> = props => {
   const {
     blueprintId,
     propKey,
-    metadata: { type, defaultValue, options, uiLabel },
+    metadata: { type, defaultValue, options, label },
   } = props;
 
   const inputWidget = useMethodCall(WidgetService, 'getInputWidget', [type]);
@@ -44,7 +38,7 @@ const PropEditor: React.FC<PropEditorProps> = props => {
 
   return (
     <Field>
-      <Label>{uiLabel || getLabel(propKey)}</Label>
+      <Label>{label || getLabel(propKey)}</Label>
       {renderInput()}
     </Field>
   );

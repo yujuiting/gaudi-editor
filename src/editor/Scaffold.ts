@@ -1,7 +1,7 @@
 import { Children, isValidElement, cloneElement, useRef, useEffect } from 'react';
 import { RenderingInfo } from 'gaudi';
 import { MutableBlueprint } from 'editor/BlueprintService';
-import { RenderedObjectService } from 'editor/RenderedObjectService';
+import { ElementService } from 'editor/ElementService';
 import { useMethod } from 'editor/di';
 
 export interface ScaffoldProps {
@@ -12,7 +12,7 @@ export interface ScaffoldProps {
 const Scaffold: React.FC<ScaffoldProps> = ({ children, info, blueprint }) => {
   const child = Children.only(children);
 
-  const add = useMethod(RenderedObjectService, 'add');
+  const add = useMethod(ElementService, 'add');
 
   const ref = useRef<HTMLElement>();
 

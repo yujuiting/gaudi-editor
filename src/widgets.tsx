@@ -88,7 +88,7 @@ const widgets: AnyWidget[] = [
   {
     type: WidgetType.Input,
     forType: 'boolean',
-    render: inputs.InputDate,
+    render: inputs.InputBoolean,
   },
   {
     type: WidgetType.Input,

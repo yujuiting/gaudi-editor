@@ -3,11 +3,8 @@ import styled from 'styled-components';
 import { VStack } from 'ui/components/Stack';
 import { HToolGroup, Tool } from 'ui/components/Toolbar';
 import * as Icon from 'ui/components/icons';
-import { useProperty$ } from 'editor/di';
-import { EditorStateService } from 'editor/EditorStateService';
 import ViewInfo from './ViewInfo';
 import PropsInfo from './PropsInfo';
-import StylesInfo from './StylesInfo';
 
 enum PageType {
   View = 'View',
@@ -19,12 +16,6 @@ const iconMap = {
   [PageType.View]: Icon.Target,
   [PageType.Props]: Icon.Info,
   [PageType.Styles]: Icon.Style,
-};
-
-const contentMap = {
-  [PageType.View]: ViewInfo,
-  [PageType.Props]: PropsInfo,
-  [PageType.Styles]: StylesInfo,
 };
 
 interface PageToolProps {
@@ -66,8 +57,14 @@ const Information: React.FC = () => {
   }
 
   function renderPage() {
-    const ContentType = contentMap[pageType];
-    return <ContentType />;
+    switch (pageType) {
+      case PageType.View:
+        return <ViewInfo />;
+      case PageType.Props:
+        return <PropsInfo category="prop" showInfo />;
+      case PageType.Styles:
+        return <PropsInfo category="style" />;
+    }
   }
 
   return (

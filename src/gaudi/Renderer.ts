@@ -68,7 +68,7 @@ export class Renderer {
       refBlueprint: blueprintName || undefined,
     };
 
-    let type: ComponentType<any> | string; // eslint-disable-line @typescript-eslint/no-explicit-any
+    let type: ComponentType | string;
 
     if (isHtmlTag(blueprint.type) || isRef) {
       type = blueprint.type;

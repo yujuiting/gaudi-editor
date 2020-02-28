@@ -1,10 +1,9 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import styled, { css } from 'styled-components';
 import * as theme from 'base/theme';
 import { useMethodCall, useMethod } from 'editor/di';
 import { BlueprintService } from 'editor/BlueprintService';
 import { EditorStateService } from 'editor/EditorStateService';
-import { RenderedObjectService } from 'editor/RenderedObjectService';
 import useSelected from 'ui/hooks/useSelected';
 
 const Container = styled.div``;
@@ -42,6 +41,7 @@ const Layer: React.FC<LayerProps> = props => {
   /**
    * @FIXME
    */
+
   const id = `${scope}-${blueprintId}`;
   const select = useMethod(EditorStateService, 'select', [id]);
   return (

@@ -20,7 +20,7 @@ const Blueprint: React.FC<Props> = props => {
     return () => subscription.unsubscribe();
   }, [watch, scope]);
 
-  return <div>{element}</div>;
+  return <>{element}</>;
 };
 
 export default Blueprint;

@@ -1,9 +1,9 @@
 import { Service } from 'typedi';
-import { BehaviorSubject, empty } from 'rxjs';
+import { BehaviorSubject, empty, combineLatest } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { MouseService } from 'base/MouseService';
 import { ViewportService, ControlState, mapMouseEventToCanvasPoint } from 'editor/ViewportService';
-import { RenderedObjectService } from 'editor/RenderedObjectService';
+import { ElementService } from 'editor/ElementService';
 import { KeybindingService } from 'base/KeybindingService';
 
 @Service()
@@ -29,7 +29,7 @@ export class EditorStateService {
   private multipleSelecting = false;
 
   constructor(
-    private renderedObject: RenderedObjectService,
+    private element: ElementService,
     viewport: ViewportService,
     keybinding: KeybindingService,
     mouse: MouseService
@@ -38,13 +38,17 @@ export class EditorStateService {
       .pipe(
         switchMap(state => (state === ControlState.Default ? mouse.move$ : empty())),
         mapMouseEventToCanvasPoint(viewport),
-        map(point => renderedObject.getFrontest(point)),
+        map(point => element.getFrontest(point)),
         map(object => object?.id)
       )
       .subscribe(this.hovered);
 
-    viewport.controlState$
-      .pipe(switchMap(state => (state === ControlState.Default ? mouse.down$ : empty())))
+    combineLatest(viewport.controlState$, viewport.viewportRect$)
+      .pipe(
+        switchMap(([state, rect]) =>
+          state === ControlState.Default ? mouse.watchDown(rect) : empty()
+        )
+      )
       .subscribe(this.onViewportMouseDown.bind(this));
 
     keybinding.define({
@@ -64,7 +68,7 @@ export class EditorStateService {
   }
 
   addSelected(id: string) {
-    const target = this.renderedObject.get(id);
+    const target = this.element.get(id);
     if (!target) return;
     // multiple selection only support in same scope
     if (target.info.scope !== this.getCurrentScope()) {
@@ -78,7 +82,7 @@ export class EditorStateService {
   }
 
   setSelected(id: string) {
-    const target = this.renderedObject.get(id);
+    const target = this.element.get(id);
     if (!target) return;
     this.selected.next([id]);
     this.setCurrentScope(target.info.scope);
