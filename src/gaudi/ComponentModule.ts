@@ -7,8 +7,5 @@ export interface ComponentModule {
 }
 
 export function getComponentName(componentModule: ComponentModule) {
-  if (typeof (componentModule.default as any).render === 'function') {
-    return (componentModule.default as any).render.name;
-  }
   return componentModule.default.displayName || componentModule.default.name || '';
 }

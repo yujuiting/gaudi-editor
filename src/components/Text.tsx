@@ -7,7 +7,6 @@ export interface Props {
   children?: string;
 }
 
-// eslint-disable-next-line react/display-name
 const Text = forwardRef<HTMLDivElement, Props>((props, ref) => {
   const { children, transform, align } = props;
   return (
@@ -23,5 +22,7 @@ const Text = forwardRef<HTMLDivElement, Props>((props, ref) => {
     </div>
   );
 });
+
+Text.displayName = 'Text';
 
 export default Text;

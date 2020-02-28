@@ -21,7 +21,7 @@ export interface Props {
   transform?: TransformConfig;
 }
 
-export default forwardRef<HTMLDivElement, Props>(function Stack(props, ref) {
+const Stack = forwardRef<HTMLDivElement, Props>((props, ref) => {
   const { direction = 'vertical', wrap, scroll, children, align, transform } = props;
   const style: React.CSSProperties = {
     display: 'flex',
@@ -37,3 +37,7 @@ export default forwardRef<HTMLDivElement, Props>(function Stack(props, ref) {
     </div>
   );
 });
+
+Stack.displayName = 'Stack';
+
+export default Stack;
