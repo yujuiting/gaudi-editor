@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { BehaviorSubject, empty, combineLatest } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 import { MouseService } from 'base/MouseService';
 import { ViewportService, ControlState, mapMouseEventToCanvasPoint } from 'editor/ViewportService';
 import { ElementService } from 'editor/ElementService';
@@ -37,7 +37,7 @@ export class EditorStateService {
     combineLatest(viewport.controlState$, viewport.viewportRect$)
       .pipe(
         switchMap(([state, rect]) =>
-          state === ControlState.Default ? mouse.observeRectDown(rect) : empty()
+          state === ControlState.Default ? mouse.observeRectMove(rect) : empty()
         ),
         mapMouseEventToCanvasPoint(viewport),
         map(point => element.getFrontest(point)),

@@ -12,6 +12,7 @@ export const HighlightHovered: React.FC = () => {
   const hovered = useHovered();
   const rect = useRenderedObjectRect(hovered || '');
   const viewportRect = useMethodCall(ViewportService, 'toViewportRect', [rect]);
+  console.log('HighlightHovered', hovered);
   return <HighlightRect type="hovered" rect={viewportRect} />;
 };
 
