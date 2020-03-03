@@ -1,5 +1,4 @@
-import React, { useRef, useEffect, useMemo } from 'react';
-import { useDrop } from 'react-dnd';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import { Vector, Size } from 'base/math';
 import { useProperty$, useMethod, useMethodCall } from 'editor/di';
 import { ViewportService, ControlState } from 'editor/ViewportService';
@@ -11,7 +10,6 @@ import Blueprint from './Blueprint';
 import { HighlightHovered, HighlightSelected } from './HighlightRect';
 import { EditorStateService } from 'editor/EditorStateService';
 import useResizer from 'ui/hooks/resize/useResizer';
-import useResizeArea from 'ui/hooks/resize/useResizeArea';
 import { ViewService } from 'editor/ViewService';
 
 const getCursor = (state: ControlState) => {
@@ -61,22 +59,12 @@ const ConnectedViewport: React.FC = () => {
 
   const scopes = useScopes();
 
-  const resizeView = useMethod(ViewService, 'resize');
-
-  const moveView = useMethod(ViewService, 'move');
-
-  const connect = useResizeArea({
-    group: 'view',
-    onResize: (delta, item) => resizeView(item.id as string, delta),
-    onMove: (delta, item) => moveView(item.id as string, delta),
-  });
-
   useEffect(() => {
     if (!viewportRef.current) return;
     bindRef(viewportRef.current);
-    connect(viewportRef.current);
+    // connect(viewportRef.current);
     return () => unbindRef();
-  }, [viewportRef, bindRef, unbindRef, connect]);
+  }, [viewportRef, bindRef, unbindRef]);
 
   function renderView(scope: string) {
     return <ConnectedView key={scope} scope={scope} />;
@@ -99,7 +87,11 @@ const ConnectedView: React.FC<ConnectedViewProps> = props => {
   const { scope } = props;
   const [rect] = useViewRect(scope);
   const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
-  const renderControllers = useResizer({ id: scope, group: 'view' });
+  const resizeView = useMethod(ViewService, 'resize');
+  const moveView = useMethod(ViewService, 'move');
+  const onResize = useCallback((s: Size) => resizeView(scope, s), [scope, resizeView]);
+  const onMove = useCallback((v: Vector) => moveView(scope, v), [scope, moveView]);
+  const renderControllers = useResizer({ id: scope, group: 'view', onResize, onMove });
 
   return (
     <View

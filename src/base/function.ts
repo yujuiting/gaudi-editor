@@ -1,3 +1,5 @@
+export const noop = () => void 0;
+
 export function pipe<T>(...fns: ((arg: T) => T)[]) {
   return (arg: T): T => {
     let result = arg;

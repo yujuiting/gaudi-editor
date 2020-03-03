@@ -2,10 +2,10 @@ import 'reflect-metadata';
 import { Container, ObjectType } from 'typedi';
 import { Observable } from 'rxjs';
 import { useObservable } from 'rxjs-hooks';
-import { Gaudi } from 'gaudi';
 import { ExtractTypeOf, ExcludeTypeOf } from 'base/type';
 import { useMethod as useInstanceMethod } from 'base/hooks';
 
+import { DragAndDropService } from 'base/DragAndDropService';
 import { KeybindingService } from 'base/KeybindingService';
 import { HistoryService } from 'editor/HistoryService';
 import { ProjectService } from 'editor/ProjectService';
@@ -35,6 +35,8 @@ Container.get(PanelService);
 Container.get(EditorPlugin);
 Container.get(ViewService);
 Container.get(EditorStateService);
+Container.get(DragAndDropService);
+Container.get(ComponentService);
 
 export function useProperty<T, K extends ExcludeTypeOf<T, Function>>(
   type: ObjectType<T>,

@@ -24,7 +24,7 @@ export type ElementEvent = ElementRectChangeEvent;
 export interface Element {
   readonly id: string;
   readonly info: RenderingInfo;
-  readonly ref: React.MutableRefObject<HTMLElement | undefined>;
+  readonly ref: React.RefObject<HTMLElement>;
   readonly blueprintId: string;
 }
 
@@ -86,11 +86,7 @@ export class ElementService implements Initializable, Destroyable {
     }
   }
 
-  add(
-    blueprintId: string,
-    info: RenderingInfo,
-    ref: React.MutableRefObject<HTMLElement | undefined>
-  ) {
+  add(blueprintId: string, info: RenderingInfo, ref: React.RefObject<HTMLElement>) {
     const id = getElementId(info.scope, blueprintId);
     const element: Element = { id, info, ref, blueprintId };
     this.elements.set(id, element);

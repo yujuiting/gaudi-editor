@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { BehaviorSubject, Subscription } from 'rxjs';
-import { takeUntil, switchMap, map } from 'rxjs/operators';
+import { takeUntil, switchMap, map, tap } from 'rxjs/operators';
 import { FSM } from 'base/FSM';
 import { Destroyable, InitializerService } from 'base/LifeCycle';
 import { getRect } from 'base/dom';
@@ -100,11 +100,11 @@ export class ViewportService implements Destroyable {
           onEnter: ({ data }) => {
             if (!this.target) return;
 
-            data.lastMouseLocation = mouse.getLocation();
-
-            const drag = this.mouse.observeDown(this.getViewportRect()).pipe(
-              switchMap(() => this.mouse.observeMove(this.getViewportRect())),
-              takeUntil(this.mouse.up$)
+            const drag = this.mouse.observeRectDown(this.getViewportRect()).pipe(
+              tap(() => (data.lastMouseLocation = mouse.getLocation())),
+              switchMap(() =>
+                this.mouse.observeRectMove(this.getViewportRect()).pipe(takeUntil(this.mouse.up$))
+              )
             );
 
             data.panning = drag.subscribe(e => {
@@ -125,7 +125,7 @@ export class ViewportService implements Destroyable {
           onEnter: e => {
             if (!this.target) return;
 
-            e.data.zooming = this.mouse.observeWheel(this.getViewportRect()).subscribe(e => {
+            e.data.zooming = this.mouse.observeRectWheel(this.getViewportRect()).subscribe(e => {
               e.preventDefault();
               e.stopPropagation();
               const current = Vector.of(e.pageX, e.pageY);
