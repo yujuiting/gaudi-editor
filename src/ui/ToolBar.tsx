@@ -19,11 +19,12 @@ const ToolBar: React.FC<Props> = ({ group, activeId, vertical }) => {
   ]);
 
   function renderTool(tool: IconWidget) {
-    return (
-      <Tool key={tool.id} active={activeId === tool.id} size="small">
-        {createElement(tool.render)}
-      </Tool>
-    );
+    // return (
+    //   <Tool key={tool.id} active={activeId === tool.id} size="small">
+    //     {createElement(tool.render)}
+    //   </Tool>
+    // );
+    return <IconWidgetRenderer {...tool} active={activeId === tool.id} />;
   }
 
   const ToolGroup = vertical ? VToolGroup : HToolGroup;
@@ -32,3 +33,13 @@ const ToolBar: React.FC<Props> = ({ group, activeId, vertical }) => {
 };
 
 export default ToolBar;
+
+const IconWidgetRenderer: React.FC<IconWidget & { active: boolean }> = props => {
+  const { active, id, render, useDisabled = () => false } = props;
+  const disabled = useDisabled();
+  return (
+    <Tool key={id} active={active} size="small" disabled={disabled}>
+      {createElement(render)}
+    </Tool>
+  );
+};

@@ -5,6 +5,8 @@ import { Redo, Undo } from 'ui/widget/tool/Edit';
 import OperationHistory from 'ui/widget/panel/OperationHistory';
 import Hierarchy from 'ui/widget/panel/Hierarchy';
 import * as inputs from 'ui/widget/inputs';
+import { useProperty$ } from 'editor/di';
+import { HistoryService } from 'editor/HistoryService';
 
 const widgets: AnyWidget[] = [
   {
@@ -40,6 +42,7 @@ const widgets: AnyWidget[] = [
     id: 'undo',
     group: 'topbar.edit',
     render: Undo,
+    useDisabled: () => useProperty$(HistoryService, 'undoable$', true),
   },
   {
     type: WidgetType.Icon,

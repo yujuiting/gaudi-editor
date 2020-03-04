@@ -42,6 +42,7 @@ export class ProjectService {
       undo: () => {
         throw new Error('cannot undo this command');
       },
+      undoable: true,
     });
 
     this.event.next({ type: 'project-opened', project: this.getCurrent() });

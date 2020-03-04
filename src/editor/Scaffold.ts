@@ -21,7 +21,7 @@ const Scaffold = forwardRef<HTMLElement, Props>(({ children, info, blueprint }, 
   useEffect(() => {
     if (ref === null) return;
     if (typeof ref === 'function') ref(innerRef.current);
-    else (ref as any).current = innerRef.current;
+    else (ref as any).current = innerRef.current; // eslint-disable-line @typescript-eslint/no-explicit-any
   }, [ref, innerRef]);
 
   if (!isValidElement(child)) return null;

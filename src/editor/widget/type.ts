@@ -18,6 +18,7 @@ export interface IconWidget extends Widget {
   readonly id: string;
   readonly group: string;
   readonly render: React.JSXElementConstructor<{}>;
+  readonly useDisabled?: () => boolean;
 }
 
 export interface PanelWidget extends Widget {

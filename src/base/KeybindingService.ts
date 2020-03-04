@@ -1,5 +1,4 @@
 import { Service } from 'typedi';
-import { distinct } from 'rxjs/operators';
 import * as array from 'base/array';
 import { KeyboardService } from 'base/KeyboardService';
 import { LoggerService, Logger } from 'base/LoggerService';

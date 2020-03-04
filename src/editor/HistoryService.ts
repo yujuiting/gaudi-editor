@@ -3,20 +3,23 @@ import { BehaviorSubject } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { KeybindingService } from 'base/KeybindingService';
 
-export interface Command {
+interface Command {
   label: string;
+  undoable?: boolean;
+}
+
+export interface SimpleCommand extends Command {
   do: () => void;
   undo: () => void;
 }
 
-export interface ConcatableCommand<T> {
-  label: string;
+export interface ConcatableCommand<T> extends Command {
   execute: (args: T) => void;
   prev: T;
   next: T;
 }
 
-type AnyCommand<T = any> = Command | ConcatableCommand<T>;
+type AnyCommand<T = any> = SimpleCommand | ConcatableCommand<T>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 type InternalCommand = AnyCommand & { timestamp: number };
 
@@ -35,17 +38,21 @@ export class HistoryService {
   }
 
   get isLatest$() {
-    return this.current$.pipe(
+    return this.current.pipe(
       map(() => this.isLatest()),
       startWith(this.isLatest())
     );
   }
 
   get isOldest$() {
-    return this.current$.pipe(
+    return this.current.pipe(
       map(() => this.isOldest()),
       startWith(this.isOldest())
     );
+  }
+
+  get undoable$() {
+    return this.current.pipe(map(() => !this.canUndo()));
   }
 
   private commands: InternalCommand[] = [];
@@ -124,24 +131,39 @@ export class HistoryService {
     this.history.next(this.commands.map(command => command.label));
   }
 
+  canUndo() {
+    if (this.isOldest()) return false;
+    const command = this.getCurrent();
+    if (command.undoable) return false;
+    return true;
+  }
+
   redo() {
-    if (this.isLatest()) return;
+    if (this.isLatest()) return false;
 
-    this.current.next(this.current.value + 1);
+    const command = this.getCurrent();
 
-    const command = this.commands[this.current.value];
-
-    this.doCommand(command);
+    try {
+      this.doCommand(command);
+      this.current.next(this.current.value + 1);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   undo() {
-    if (this.isOldest()) return;
+    if (this.isOldest()) return false;
 
-    const command = this.commands[this.current.value];
+    const command = this.getCurrent();
 
-    this.undoCommand(command);
-
-    this.current.next(this.current.value - 1);
+    try {
+      this.undoCommand(command);
+      this.current.next(this.current.value - 1);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   doCommand<T>(command: AnyCommand<T>) {
@@ -158,5 +180,9 @@ export class HistoryService {
     } else {
       command.undo();
     }
+  }
+
+  private getCurrent() {
+    return this.commands[this.current.value];
   }
 }

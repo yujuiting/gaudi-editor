@@ -1,18 +1,18 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Rect } from 'base/math';
 import { useMethod } from 'editor/di';
 import { ViewService } from 'editor/ViewService';
-import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Rect } from 'base/math';
 
 function useViewRect(scope: string) {
-  const watchRect = useMethod(ViewService, 'watchRect');
-  const value$ = useMemo(() => watchRect(scope), [watchRect, scope]);
+  const watch = useMethod(ViewService, 'watchRect');
+  const update = useMethod(ViewService, 'updateRect');
   const [view, setView] = useState<Rect>(Rect.zero);
+  const updateValue = useCallback((rect: Rect) => update(scope, rect), [update, scope]);
   useEffect(() => {
-    const subscription = value$.subscribe(setView);
+    const subscription = watch(scope).subscribe(setView);
     return () => subscription.unsubscribe();
-  }, [value$, setView]);
-  const updateRect = useMethod(ViewService, 'updateRect');
-  return [view, useCallback((rect: Rect) => updateRect(scope, rect), [updateRect, scope])] as const;
+  }, [watch, scope, setView]);
+  return [view, updateValue] as const;
 }
 
 export default useViewRect;

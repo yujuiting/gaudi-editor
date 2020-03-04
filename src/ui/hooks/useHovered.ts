@@ -1,9 +1,9 @@
-import { useMethod, useProperty$ } from 'editor/di';
+import { useProperty$, useMethodCall } from 'editor/di';
 import { EditorStateService } from 'editor/EditorStateService';
 
 function useHovered() {
-  const getHovered = useMethod(EditorStateService, 'getHovered');
-  return useProperty$(EditorStateService, 'hovered$', getHovered());
+  const hovered = useMethodCall(EditorStateService, 'getHovered', []);
+  return useProperty$(EditorStateService, 'hovered$', hovered);
 }
 
 export default useHovered;

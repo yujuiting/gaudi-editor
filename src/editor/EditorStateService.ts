@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { BehaviorSubject, empty, combineLatest } from 'rxjs';
-import { map, switchMap, tap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { MouseService } from 'base/MouseService';
 import { ViewportService, ControlState, mapMouseEventToCanvasPoint } from 'editor/ViewportService';
 import { ElementService } from 'editor/ElementService';

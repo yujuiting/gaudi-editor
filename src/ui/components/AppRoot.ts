@@ -18,7 +18,7 @@ export default styled.div`
     }
   }
 
-  button,
+  button:not(:disabled),
   a {
     :hover {
       color: ${theme.get('color.highlight')};

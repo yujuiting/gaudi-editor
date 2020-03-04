@@ -19,6 +19,7 @@ import { EditorPlugin } from 'editor/EditorPlugin';
 import { ViewService } from 'editor/ViewService';
 import { EditorStateService } from 'editor/EditorStateService';
 import { ComponentService } from 'editor/ComponentService';
+import { useMemo } from 'react';
 
 // Container.set({ id: Gaudi, type: Gaudi });
 
@@ -92,5 +93,6 @@ export function useMethodCall<
 >(type: ObjectType<T>, methodName: K, args: P): R {
   const service = Container.get(type);
   const method: Function = useInstanceMethod<T, K, P>(service, methodName);
-  return method(...args);
+  // return method(...args);
+  return useMemo(() => method(...args), [method, ...args]); // eslint-disable-line react-hooks/exhaustive-deps
 }

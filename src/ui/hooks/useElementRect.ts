@@ -4,7 +4,7 @@ import { Rect } from 'base/math';
 import { useMethod } from 'editor/di';
 import { ElementService } from 'editor/ElementService';
 
-function useRenderedObjectRect(id: string) {
+function useElementRect(id: string) {
   const getRect = useMethod(ElementService, 'getRect');
   const watchRect = useMethod(ElementService, 'watchRect');
   return useObservable<Rect, [string]>(
@@ -14,4 +14,4 @@ function useRenderedObjectRect(id: string) {
   );
 }
 
-export default useRenderedObjectRect;
+export default useElementRect;

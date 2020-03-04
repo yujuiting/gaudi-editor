@@ -3,7 +3,6 @@ import { pipe } from 'base/function';
 import { Vector, Size, Rect } from 'base/math';
 import useDrag from 'ui/hooks/dnd/useDrag';
 import { DnDType } from 'ui/hooks/dnd/types';
-import { DragType } from './shared';
 import {
   Hitbox,
   UpHitbox,
@@ -107,7 +106,7 @@ function useResizer({
     applyDelta(rect);
   }, [downLeftInfo, onMove, onResize, applyDelta]);
 
-  function renderControllers() {
+  function renderControllers(): React.ReactChild[] {
     function renderController(
       type: typeof Hitbox,
       ref: React.RefObject<HTMLDivElement>,
@@ -116,15 +115,15 @@ function useResizer({
       return createElement(type, { ref, key, thickness, debug });
     }
     return [
-      renderController(UpHitbox, upRef, DragType.Up),
-      renderController(DownHitbox, downRef, DragType.Down),
-      renderController(LeftHitbox, leftRef, DragType.Left),
-      renderController(RightHitbox, rightRef, DragType.Right),
-      renderController(UpLeftHitbox, upLeftRef, DragType.UpLeft),
-      renderController(DownRightHitbox, downRightRef, DragType.DownRight),
-      renderController(UpRightHitbox, upRightRef, DragType.UpRight),
-      renderController(DownLefttHitbox, downLeftRef, DragType.DownLeft),
-    ] as const;
+      renderController(UpHitbox, upRef, 'up-resizer'),
+      renderController(DownHitbox, downRef, 'down-resizer'),
+      renderController(LeftHitbox, leftRef, 'left-resizer'),
+      renderController(RightHitbox, rightRef, 'right-resizer'),
+      renderController(UpLeftHitbox, upLeftRef, 'up-left-resizer'),
+      renderController(DownRightHitbox, downRightRef, 'down-right-resizer'),
+      renderController(UpRightHitbox, upRightRef, 'up-right-resizer'),
+      renderController(DownLefttHitbox, downLeftRef, 'down-left-resizer'),
+    ];
   }
 
   return renderControllers;

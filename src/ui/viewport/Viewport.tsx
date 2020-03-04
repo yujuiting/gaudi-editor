@@ -87,10 +87,10 @@ const ConnectedView: React.FC<ConnectedViewProps> = props => {
   const { scope } = props;
   const [rect] = useViewRect(scope);
   const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
-  const resizeView = useMethod(ViewService, 'resize');
-  const moveView = useMethod(ViewService, 'move');
-  const onResize = useCallback((s: Size) => resizeView(scope, s), [scope, resizeView]);
-  const onMove = useCallback((v: Vector) => moveView(scope, v), [scope, moveView]);
+  const resize = useMethod(ViewService, 'resize');
+  const move = useMethod(ViewService, 'move');
+  const onResize = useCallback((s: Size) => resize(scope, s), [scope, resize]);
+  const onMove = useCallback((v: Vector) => move(scope, v), [scope, move]);
   const renderControllers = useResizer({ id: scope, group: 'view', onResize, onMove });
 
   return (

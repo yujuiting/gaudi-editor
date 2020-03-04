@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useReducer } from 'react';
 import { RendererService } from 'editor/RendererService';
-import { useMethodCall, useMethod } from 'editor/di';
+import { useMethod } from 'editor/di';
 
 export interface Props {
   scope: string;
@@ -9,18 +9,18 @@ export interface Props {
 const Blueprint: React.FC<Props> = props => {
   const { scope } = props;
 
-  const [, update] = useState(0);
+  const [, update] = useReducer(c => c + 1, 0);
 
-  const element = useMethodCall(RendererService, 'getElement', [scope]);
+  const getElement = useMethod(RendererService, 'getElement');
 
   const watch = useMethod(RendererService, 'watch');
 
   useEffect(() => {
-    const subscription = watch(scope).subscribe(() => update(c => c + 1));
+    const subscription = watch(scope).subscribe(() => update());
     return () => subscription.unsubscribe();
   }, [watch, scope]);
 
-  return <>{element}</>;
+  return <>{getElement(scope)}</>;
 };
 
 export default Blueprint;

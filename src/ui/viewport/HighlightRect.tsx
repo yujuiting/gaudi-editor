@@ -5,21 +5,20 @@ import { Vector, Rect } from 'base/math';
 import { ViewportService } from 'editor/ViewportService';
 import useHovered from 'ui/hooks/useHovered';
 import useSelected from 'ui/hooks/useSelected';
-import useRenderedObjectRect from 'ui/hooks/useRenderedObjectRect';
-import useRenderedObjectRects from 'ui/hooks/useRenderedObjectRects';
+import useElementRect from 'ui/hooks/useElementRect';
+import useElementRects from 'ui/hooks/useElementRects';
 
 export const HighlightHovered: React.FC = () => {
   const hovered = useHovered();
-  const rect = useRenderedObjectRect(hovered || '');
+  const rect = useElementRect(hovered || '');
   const viewportRect = useMethodCall(ViewportService, 'toViewportRect', [rect]);
-  console.log('HighlightHovered', hovered);
   return <HighlightRect type="hovered" rect={viewportRect} />;
 };
 
 export const HighlightSelected: React.FC = () => {
   const selected = useSelected();
 
-  const rects = useRenderedObjectRects(selected);
+  const rects = useElementRects(selected);
 
   const toViewportRect = useMethod(ViewportService, 'toViewportRect');
 

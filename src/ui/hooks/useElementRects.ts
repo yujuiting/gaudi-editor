@@ -4,7 +4,7 @@ import { Rect } from 'base/math';
 import { useMethod } from 'editor/di';
 import { ElementService } from 'editor/ElementService';
 
-export function useRenderedObjectRects(ids: string[]) {
+export function useElementRects(ids: string[]) {
   const getRect = useMethod(ElementService, 'getRect');
   const watchRect = useMethod(ElementService, 'watchRect');
   const [rects, setRects] = useState<Rect[]>([]);
@@ -24,4 +24,4 @@ export function useRenderedObjectRects(ids: string[]) {
   return rects;
 }
 
-export default useRenderedObjectRects;
+export default useElementRects;
