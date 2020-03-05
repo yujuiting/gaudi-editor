@@ -11,7 +11,7 @@ import { RectTrackerService, RectChangedEvent } from 'base/RectTrackerService';
 import { ViewportService } from 'editor/ViewportService';
 import { ViewService } from 'editor/ViewService';
 
-const getElementId = (scope: string, blueprintId: string) => `${scope}-${blueprintId}`;
+export const getElementId = (scope: string, blueprintId: string) => `${scope}-${blueprintId}`;
 
 interface ElementRectChangeEvent {
   type: 'element-rect-change';
@@ -69,7 +69,7 @@ export class ElementService implements Initializable, Destroyable {
           map(([rect, pos]) => Rect.of(pos, rect.size)),
           distinctUntilChanged(Rect.eq)
         )
-        .subscribe(this.onVisibleRectChanged.bind(this)),
+        .subscribe(this.onViewportRectChange.bind(this)),
       this.viewport.canvasSize$
         .pipe(debounceTime(100), distinctUntilChanged(Size.eq))
         .subscribe(this.rebuildTree.bind(this)),
@@ -180,6 +180,7 @@ export class ElementService implements Initializable, Destroyable {
     for (const [id, element] of this.elements) {
       // only tracking elements that visible, rendered and belong to current scope
       if (visibles.has(element) && element.ref) {
+        if (this.rectTracker.has(id)) continue;
         this.rectTracker.track(id, () => {
           if (!element.ref.current) return Rect.zero;
           const localRect = getRectFromHTMLElement(element.ref.current);
@@ -194,16 +195,17 @@ export class ElementService implements Initializable, Destroyable {
     this.logger.trace('tracking visibles', { count: visibles.size });
   }
 
-  private onVisibleRectChanged(rect: Rect) {
+  private onViewportRectChange(rect: Rect) {
     const buffer = rect.size.mul(0.2);
     const pos = rect.position.sub(buffer.width, buffer.height);
-    const size = rect.size.add(buffer);
+    const size = rect.size.add(buffer.mul(2));
     this.visibleRect = Rect.of(pos, size);
     this.trackingVisibles();
   }
 
   private rebuildTree(size: Size) {
     this.tree = this.buildTree(size);
+    this.logger.trace('rebuildTree', { size });
   }
 
   private onRectChanged({ id, rect }: RectChangedEvent) {

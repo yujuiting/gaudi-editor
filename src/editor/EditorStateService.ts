@@ -69,8 +69,8 @@ export class EditorStateService {
     return this.hovered.value;
   }
 
-  addSelected(id: string) {
-    const target = this.element.get(id);
+  addSelected(elementId: string) {
+    const target = this.element.get(elementId);
     if (!target) return;
     // multiple selection only support in same scope
     if (target.info.scope !== this.getCurrentScope()) {
@@ -78,29 +78,29 @@ export class EditorStateService {
     }
     const currentSelected = this.getSelected();
     // prevent select repeatly
-    if (currentSelected.find(objectId => objectId === id)) return;
-    this.selected.next([...currentSelected, id]);
+    if (currentSelected.find(objectId => objectId === elementId)) return;
+    this.selected.next([...currentSelected, elementId]);
     this.setCurrentScope(target.info.scope);
   }
 
-  setSelected(id: string) {
-    const target = this.element.get(id);
+  setSelected(elementId: string) {
+    const target = this.element.get(elementId);
     if (!target) return;
-    this.selected.next([id]);
+    this.selected.next([elementId]);
     this.setCurrentScope(target.info.scope);
   }
 
-  select(id: string) {
+  select(elementId: string) {
     if (this.multipleSelecting) {
-      this.addSelected(id);
+      this.addSelected(elementId);
     } else {
-      this.setSelected(id);
+      this.setSelected(elementId);
     }
   }
 
-  removeSelected(id: string) {
+  removeSelected(elementId: string) {
     const selected = this.getSelected();
-    const index = selected.findIndex(objectId => objectId === id);
+    const index = selected.findIndex(objectId => objectId === elementId);
     if (index < 0) return;
     this.selected.next([...selected.slice(0, index), ...selected.slice(index + 1)]);
   }

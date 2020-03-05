@@ -69,7 +69,12 @@ export class RectTrackerService implements Initializable, Destroyable {
     return this.rectChanged$.pipe(filter(rce => rce.id === id));
   }
 
+  has(id: unknown) {
+    return this.trackings.has(id);
+  }
+
   track(id: unknown, getRect: () => Rect) {
+    if (this.trackings.has(id)) throw new Error('track repeatly');
     const trackingData: TrackingData = { getRect, prevRect: Rect.zero };
     this.trackings.set(id, trackingData);
     this.update(id, trackingData);

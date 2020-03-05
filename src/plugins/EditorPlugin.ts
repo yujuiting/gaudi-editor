@@ -2,7 +2,7 @@ import { Service } from 'typedi';
 import { createElement } from 'react';
 import { RenderingInfo, Plugin } from 'gaudi';
 import { MutableBlueprint } from 'editor/BlueprintService';
-import Scaffold from 'editor/Scaffold';
+import Scaffold from 'ui/Scaffold';
 
 @Service()
 export class EditorPlugin implements Plugin {

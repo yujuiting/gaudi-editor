@@ -10,6 +10,7 @@ import { WidgetService } from 'editor/widget/WidgetService';
 import { ProjectService } from 'editor/ProjectService';
 import widgets from './widgets';
 import App from './App';
+import { EditorPlugin } from 'plugins/EditorPlugin';
 import * as serviceWorker from './serviceWorker';
 import { PanelService } from 'editor/widget/PanelService';
 import { EditorService } from 'editor/EditorService';
@@ -22,7 +23,10 @@ import * as TextModule from 'components/Text.gaudi';
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
-const gaudi = new Gaudi({ componentModules: [StackModule, TextModule] });
+const gaudi = new Gaudi({
+  componentModules: [StackModule, TextModule],
+  plugins: [new EditorPlugin()],
+});
 const editor = Container.get(EditorService);
 const mouse = Container.get(MouseService);
 const keyboard = Container.get(KeyboardService);

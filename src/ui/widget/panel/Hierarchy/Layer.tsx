@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styled, { css } from 'styled-components';
 import * as theme from 'base/theme';
 import { useMethodCall, useMethod } from 'editor/di';
 import { BlueprintService } from 'editor/BlueprintService';
 import { EditorStateService } from 'editor/EditorStateService';
+import { getElementId } from 'editor/ElementService';
 import useSelected from 'ui/hooks/useSelected';
 
 const Container = styled.div``;
@@ -34,19 +35,13 @@ export interface LayerProps {
 
 const Layer: React.FC<LayerProps> = props => {
   const { scope, blueprintId, children } = props;
+  const elementId = useMemo(() => getElementId(scope, blueprintId), [scope, blueprintId]);
   const selected = useSelected();
   const blueprint = useMethodCall(BlueprintService, 'get', [blueprintId]);
-  // const type = useMethodCall(BlueprintService, 'getType', [blueprintId]);
-  // const obj = useMethodCall(RenderedObjectService, 'findByBlueprintId', [scope, blueprintId]);
-  /**
-   * @FIXME
-   */
-
-  const id = `${scope}-${blueprintId}`;
-  const select = useMethod(EditorStateService, 'select', [id]);
+  const select = useMethod(EditorStateService, 'select', [elementId]);
   return (
     <Container>
-      <Name onClick={select} selected={selected.includes(id)}>
+      <Name onClick={select} selected={selected.includes(elementId)}>
         {blueprint.type}
       </Name>
       {children && <Children>{children}</Children>}
