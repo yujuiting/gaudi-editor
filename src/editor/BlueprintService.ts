@@ -5,6 +5,13 @@ import { Blueprint, JSONObject, JSONValue } from 'gaudi';
 import { generateId } from 'base/id';
 import * as object from 'base/object';
 import { ViewService } from 'editor/ViewService';
+import { ComponentService } from './ComponentService';
+
+export function isBlueprint(value?: unknown): value is MutableBlueprint {
+  if (typeof value !== 'object') return false;
+  if (value === null) return false;
+  return typeof (value as Blueprint).type === 'string';
+}
 
 export interface MutableBlueprint extends Mutable<Blueprint> {
   readonly id: string;
@@ -104,7 +111,7 @@ export class BlueprintService {
 
   private updateEvent = new Subject<BlueprintUpdatedEvent>();
 
-  constructor(private view: ViewService) {}
+  constructor(private view: ViewService, private component: ComponentService) {}
 
   import(scope: string, value: Blueprint = { type: 'div' }) {
     const blueprint = toMutableBlueprint(value);
@@ -206,6 +213,7 @@ export class BlueprintService {
     if (!scope) throw new Error('scopt not found');
     const target = this.blueprints.get(id);
     if (!target) throw new Error();
+    if (!this.canInsertChild(id, blueprint)) return;
     const child = toMutableBlueprint(blueprint);
     this.blueprints.set(child.id, child);
     target.children.splice(at, 0, child);
@@ -219,6 +227,28 @@ export class BlueprintService {
     if (!target) throw new Error();
     target.children.splice(at, 1);
     this.afterUpdated({ type: 'blueprint-children-updated', scope, id });
+  }
+
+  appendChild(id: string, blueprint: Blueprint) {
+    const scope = this.relations.get(id);
+    if (!scope) throw new Error('scopt not found');
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    if (!this.canInsertChild(id, blueprint)) return;
+    const child = toMutableBlueprint(blueprint);
+    this.blueprints.set(child.id, child);
+    target.children.push(child);
+    this.afterUpdated({ type: 'blueprint-children-updated', scope, id });
+  }
+
+  canInsertChild(id: string, blueprint: Blueprint) {
+    const target = this.blueprints.get(id);
+    if (!target) throw new Error();
+    const { max, forbids, accepts } = this.component.getChildrenConstraint(target.type);
+    if (max !== void 0 && target.children.length === max) return false;
+    if (forbids !== void 0 && forbids.includes(blueprint.type)) return false;
+    if (accepts !== void 0) return accepts.includes(blueprint.type);
+    return true;
   }
 
   private afterUpdated(event: BlueprintUpdatedEvent) {

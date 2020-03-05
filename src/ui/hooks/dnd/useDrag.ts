@@ -1,11 +1,11 @@
 import { useCallback, useState, useLayoutEffect } from 'react';
-import { DragAndDropService, DragEvent } from 'base/DragAndDropService';
+import { DragAndDropService, DragEvent, DraggableConfig } from 'base/DragAndDropService';
 import { useMethod } from 'editor/di';
 import { Vector } from 'base/math';
 
 type DragInfo = Omit<DragEvent, 'source'>;
 
-function useDrag(ref: React.RefObject<HTMLElement>, type?: string) {
+function useDrag(ref: React.RefObject<HTMLElement>, { type, data }: DraggableConfig = {}) {
   const register = useMethod(DragAndDropService, 'registerDraggable');
   const observeBeginDrag = useMethod(DragAndDropService, 'observeBeginDrag');
   const observeStopDrag = useMethod(DragAndDropService, 'observeStopDrag');
@@ -26,8 +26,8 @@ function useDrag(ref: React.RefObject<HTMLElement>, type?: string) {
 
   useLayoutEffect(() => {
     if (!ref.current) return;
-    return register(ref.current, type);
-  }, [ref, register, type]);
+    return register(ref.current, { type, data });
+  }, [ref, register, type, data]);
 
   useLayoutEffect(() => {
     const subscriptions = [

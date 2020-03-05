@@ -6,6 +6,9 @@ declare module 'gaudi/ComponentModule' {
 
 export interface ComponentMetadata {
   props?: Record<string, PropMetadata>;
+  constraint?: {
+    children?: ChildrenConstraint;
+  };
 }
 
 interface InternalPropMetadata<Type extends string, DefaultValue> {
@@ -30,3 +33,9 @@ export type PropMetadata =
   | InternalPropMetadata<'any', string>;
 
 export type PossiblePropType = PropMetadata extends { type: infer T } ? T : never;
+
+export interface ChildrenConstraint {
+  max?: number;
+  forbids?: string[];
+  accepts?: string[];
+}

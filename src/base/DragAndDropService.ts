@@ -26,23 +26,32 @@ export interface DragEvent {
 }
 
 export interface HoverEvent {
-  source: Draggable;
-  destination: Droppable;
+  readonly source: Draggable;
+  readonly destination: Droppable;
+  readonly hovered: boolean;
 }
 
 export interface DropEvent {
-  source: Draggable;
-  destination: Droppable;
+  readonly source: Draggable;
+  readonly destination: Droppable;
 }
 
-interface Draggable {
-  type?: string;
-  element: HTMLElement;
+export interface DraggableConfig {
+  readonly type?: string;
+  readonly data?: Readonly<unknown>;
 }
 
-interface Droppable {
-  accepts: string[];
-  element: HTMLElement;
+export interface Draggable extends DraggableConfig {
+  readonly element: HTMLElement;
+}
+
+export interface DroppableConfig {
+  readonly accepts: string[];
+  readonly canDrop?: (source: Draggable) => boolean;
+}
+
+export interface Droppable extends DroppableConfig {
+  readonly element: HTMLElement;
 }
 
 interface Dragging {
@@ -107,8 +116,8 @@ export class DragAndDropService implements Initializable, Destroyable {
     this.subscriptions = [];
   }
 
-  registerDraggable(element: HTMLElement, type?: string) {
-    this.draggables.set(element, { element, type });
+  registerDraggable(element: HTMLElement, config: DraggableConfig = {}) {
+    this.draggables.set(element, { element, ...config });
     return () => this.unregisterDraggable(element);
   }
 
@@ -116,9 +125,8 @@ export class DragAndDropService implements Initializable, Destroyable {
     this.draggables.delete(element);
   }
 
-  registerDroppable(element: HTMLElement, accepts: string[]) {
-    console.log('rregisterDroppablegis', element, accepts);
-    this.droppables.set(element, { element, accepts });
+  registerDroppable(element: HTMLElement, config: DroppableConfig) {
+    this.droppables.set(element, { element, ...config });
     return () => this.unregisterDroppable(element);
   }
 
@@ -171,46 +179,44 @@ export class DragAndDropService implements Initializable, Destroyable {
     const current = dom.getPagePointFromMouseEvent(e);
     const diff = current.sub(this.dragging.initial);
     const delta = current.sub(this.dragging.last);
+    this.onHover(source, current);
     this.dragging.current = current;
     this.dragging.diff = diff;
     this.dragging.delta = delta;
     this.dragging.last = current;
     this.drag.next({ source, initial, current, diff, offset, delta });
-
-    if (!source.type) return;
-
-    const destination = this.getDroppable();
-    if (destination) this.hover.next({ destination, source });
   }
 
   private stopDragging() {
     if (!this.dragging) return;
-    const { source } = this.dragging;
+    const { source, current } = this.dragging;
+    this.clearHover(source);
+    this.onDrop(source, current);
     this.stopDrag.next(this.dragging);
-
-    if (!source.type) return;
-
-    const destination = this.getDroppable();
-    if (destination) this.drop.next({ destination, source });
   }
 
-  private getDroppable() {
-    if (!this.dragging) return;
+  private onHover(source: Draggable, location: Vector) {
+    for (const [destElement, destination] of this.droppables) {
+      const destRect = dom.getRect(destElement);
+      const hovered = destRect.contains(location);
+      this.hover.next({ destination, source, hovered });
+    }
+  }
 
-    const { source } = this.dragging;
-
+  private onDrop(source: Draggable, location: Vector) {
     if (!source.type) return null;
-
-    const srcRect = dom.getRect(source.element);
 
     for (const [destElement, destination] of this.droppables) {
       if (!destination.accepts.includes(source.type)) continue;
       const destRect = dom.getRect(destElement);
-      if (destRect.overlaps(srcRect)) {
-        return destination;
-      }
+      if (destination.canDrop && !destination.canDrop(source)) continue;
+      if (destRect.contains(location)) this.drop.next({ destination, source });
     }
+  }
 
-    return null;
+  private clearHover(source: Draggable) {
+    for (const [, destination] of this.droppables) {
+      this.hover.next({ destination, source, hovered: false });
+    }
   }
 }

@@ -93,6 +93,9 @@ export default {
       },
       ...defaultStyleProps,
     },
+    constraint: {
+      children: { max: 0 },
+    },
   },
   a: {
     props: {
@@ -116,6 +119,9 @@ export default {
     props: {
       children: { category: 'prop', type: 'string', label: 'text' },
       ...defaultStyleProps,
+    },
+    constraint: {
+      children: { forbids: ['button'] },
     },
   },
 } as Record<string, ComponentMetadata | undefined>;

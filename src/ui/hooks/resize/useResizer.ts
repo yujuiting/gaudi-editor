@@ -2,7 +2,6 @@ import { createElement, useRef, useEffect, useCallback } from 'react';
 import { pipe } from 'base/function';
 import { Vector, Size, Rect } from 'base/math';
 import useDrag from 'ui/hooks/dnd/useDrag';
-import { DnDType } from 'ui/hooks/dnd/types';
 import {
   Hitbox,
   UpHitbox,
@@ -52,14 +51,14 @@ function useResizer({
   const downRightRef = useRef<HTMLDivElement>(null);
   const upRightRef = useRef<HTMLDivElement>(null);
   const downLeftRef = useRef<HTMLDivElement>(null);
-  const [, upInfo] = useDrag(upRef, DnDType.Resizer);
-  const [, downInfo] = useDrag(downRef, DnDType.Resizer);
-  const [, leftInfo] = useDrag(leftRef, DnDType.Resizer);
-  const [, rightInfo] = useDrag(rightRef, DnDType.Resizer);
-  const [, upLeftInfo] = useDrag(upLeftRef, DnDType.Resizer);
-  const [, downRightInfo] = useDrag(downRightRef, DnDType.Resizer);
-  const [, upRightInfo] = useDrag(upRightRef, DnDType.Resizer);
-  const [, downLeftInfo] = useDrag(downLeftRef, DnDType.Resizer);
+  const [, upInfo] = useDrag(upRef);
+  const [, downInfo] = useDrag(downRef);
+  const [, leftInfo] = useDrag(leftRef);
+  const [, rightInfo] = useDrag(rightRef);
+  const [, upLeftInfo] = useDrag(upLeftRef);
+  const [, downRightInfo] = useDrag(downRightRef);
+  const [, upRightInfo] = useDrag(upRightRef);
+  const [, downLeftInfo] = useDrag(downLeftRef);
   const applyDelta = useCallback(
     (rect: Rect) => {
       if (rect.position !== Vector.zero) onMove(rect.position);
