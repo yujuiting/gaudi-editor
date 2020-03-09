@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import * as object from 'base/object';
+import { ElementId } from 'base/id';
 import { FieldSet, Legend, Field, Label } from 'ui/components/Form';
 import useMetadata from 'ui/hooks/useMetadata';
 import useSelected from 'ui/hooks/useSelected';
-import useBlueprint from 'ui/hooks/useBlueprint';
 import PropEditor from './PropEditor';
 
 interface PropsInfoContentProps {
-  selected: string;
+  selected: ElementId;
   category: string;
   showInfo?: boolean;
 }
@@ -15,9 +15,7 @@ interface PropsInfoContentProps {
 const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
   const { selected, category, showInfo } = props;
 
-  const blueprint = useBlueprint(selected);
-
-  const metadata = useMetadata(blueprint.type);
+  const metadata = useMetadata(selected);
 
   const groups = useMemo(() => {
     const result = new Map<string, string[]>();
@@ -42,7 +40,7 @@ const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
         key={propKey}
         propKey={propKey}
         metadata={metadata!.props![propKey]}
-        blueprintId={blueprint.id}
+        scaffoldId={selected.scaffoldId}
       />
     );
   }
@@ -63,12 +61,12 @@ const PropsInfoContent: React.FC<PropsInfoContentProps> = props => {
       <FieldSet>
         <Legend>Info</Legend>
         <Field>
-          <Label>id</Label>
-          {selected}
+          <Label>Scope name</Label>
+          {selected.scopeName}
         </Field>
         <Field>
-          <Label>blueprint id</Label>
-          {blueprint.id}
+          <Label>Scaffold ID</Label>
+          {selected.scaffoldId.toString()}
         </Field>
       </FieldSet>
     );

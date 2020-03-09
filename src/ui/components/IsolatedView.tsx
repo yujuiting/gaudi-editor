@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { createPortal } from 'react-dom';
-// import { View, ViewProps } from './components';
 
 interface IframeProps {
   disablePointerEvent?: boolean;

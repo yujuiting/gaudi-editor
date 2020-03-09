@@ -1,54 +1,118 @@
 import { Service } from 'typedi';
-import { map, startWith } from 'rxjs/operators';
+import { map, filter, tap } from 'rxjs/operators';
 import { JSONValue, Blueprint } from 'gaudi';
 import { HistoryService } from 'editor/HistoryService';
-import { BlueprintService, filterPropUpdateEvent } from 'editor/BlueprintService';
+import { ScaffoldService } from 'editor/scaffold/ScaffoldService';
+import { ScopeService } from 'editor/scope/ScopeService';
+import { ScaffoldId } from 'base/id';
 
 @Service()
 export class OperatorService {
-  constructor(private history: HistoryService, private blueprint: BlueprintService) {}
+  constructor(
+    private history: HistoryService,
+    private scaffold: ScaffoldService,
+    private scope: ScopeService
+  ) {}
 
-  getBlueprintProp<T extends JSONValue>(id: string, key: string) {
-    return this.blueprint.getProp<T>(id, key);
+  createScope(name: string) {
+    this.history.push({
+      label: 'Create scope',
+      do: () => this.scope.create(name),
+      undo: () => this.scope.destroy(name),
+    });
   }
 
-  watchBlueprintProp<T extends JSONValue>(id: string, key: string) {
-    return this.blueprint.updateEvent$.pipe(
-      filterPropUpdateEvent(id, key),
-      map(e => e.value as T),
-      startWith(this.getBlueprintProp<T>(id, key))
+  destroyScope(name: string) {
+    const scope = this.scope.get(name);
+    const blueprint = this.scaffold.extract(scope.root);
+    this.history.push({
+      label: 'Destroy scope',
+      do: () => this.scope.destroy(name),
+      undo: () => this.scope.create(name, blueprint),
+    });
+  }
+
+  getProp<T extends JSONValue>(id: ScaffoldId, key: string) {
+    return this.scaffold.getProp<T>(id, key);
+  }
+
+  watchProp<T extends JSONValue>(id: ScaffoldId, key: string) {
+    return this.scaffold.propUpdated$.pipe(
+      tap(e => console.log('watch', e)),
+      filter(e => e.id.eq(id) && e.key === key),
+      map(e => e.value as T)
     );
   }
 
-  updateBlueprintProp(id: string, key: string, value: JSONValue) {
-    const oldValue = this.getBlueprintProp(id, key);
+  updateProp(id: ScaffoldId, key: string, value: JSONValue) {
+    const oldValue = this.getProp(id, key);
     this.history.push({
       label: `Update prop: ${key.replace('.', ' ')}`,
       prev: { id, key, value: oldValue },
       next: { id, key, value },
-      execute: args => this.blueprint.updateProp(args.id, args.key, args.value),
+      execute: args => this.scaffold.updateProp(args.id, args.key, args.value),
     });
   }
 
   /**
    * insert from tail as default
    */
-  insertBlueprintChild(id: string, blueprint: Blueprint, at?: number) {
-    const finalAt = at || this.blueprint.getChildrenCount(id);
+  insert(id: ScaffoldId, blueprint: Blueprint, at: number) {
     this.history.push({
       label: 'Insert child',
-      do: () => this.blueprint.insertChild(id, blueprint, finalAt),
-      undo: () => this.blueprint.removeChild(id, finalAt),
+      do: () => {
+        const childId = this.scaffold.create(blueprint);
+        this.scaffold.createRelation(childId, id, at);
+      },
+      undo: () => {
+        const childId = this.scaffold.getChildAt(id, at);
+        this.scaffold.destroyRelation(childId, id);
+        this.scaffold.destroy(childId);
+      },
     });
   }
 
-  removeBlueprintChild(id: string, at: number) {
-    const child = this.blueprint.getChildAt(id, at);
-    if (!child) throw new Error();
+  append(id: ScaffoldId, blueprint: Blueprint) {
+    const at = this.scaffold.getChildrenCount(id);
+    this.insert(id, blueprint, at);
+  }
+
+  remove(id: ScaffoldId) {
+    const blueprint = this.scaffold.extract(id);
+    // we cannot remove an root item
+    const parent = this.scaffold.getParent(id);
     this.history.push({
       label: 'Remove child',
-      do: () => this.blueprint.removeChild(id, at),
-      undo: () => this.blueprint.insertChild(id, child, at),
+      do: () => this.scaffold.destroy(id),
+      undo: () => {
+        const newId = this.scaffold.create(blueprint);
+        this.scaffold.createRelation(newId, parent.id, parent.at);
+      },
     });
+  }
+
+  removeChild(id: ScaffoldId, at: number) {
+    const childId = this.scaffold.getChildAt(id, at);
+    this.remove(childId);
+  }
+
+  move(id: ScaffoldId, newParentId: ScaffoldId, at: number) {
+    const oldParent = this.scaffold.getParent(id);
+    this.history.push({
+      label: 'Move child',
+      do: () => {
+        this.scaffold.destroyRelation(id, oldParent.id);
+        this.scaffold.createRelation(id, newParentId, at);
+      },
+      undo: () => {
+        this.scaffold.destroyRelation(id, newParentId);
+        this.scaffold.createRelation(id, oldParent.id, oldParent.at);
+      },
+    });
+  }
+
+  moveToLast(id: ScaffoldId, newParentId: ScaffoldId) {
+    const at = this.scaffold.getChildrenCount(newParentId);
+    return this.move(id, newParentId, at);
   }
 }

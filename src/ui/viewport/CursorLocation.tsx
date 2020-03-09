@@ -12,6 +12,7 @@ const CursorLocation: React.FC = () => {
 
   return (
     <div>
+      Location:
       {x.toFixed(2)}, {y.toFixed(2)}
     </div>
   );

@@ -20,3 +20,5 @@ declare interface Window {
 declare type Mutable<T> = {
   -readonly [P in keyof T]: T[P];
 };
+
+declare type RestrictArray<T> = T extends unknown[] ? T : [];

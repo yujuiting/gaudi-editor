@@ -1,4 +1,4 @@
-import { forwardRef, createElement } from 'react';
+import { forwardRef, createElement, Fragment } from 'react';
 import { Blueprint, Project } from './Blueprint';
 import { ComponentModule, ComponentType } from './ComponentModule';
 import { Container } from './Container';
@@ -70,7 +70,12 @@ export class Renderer {
 
     let type: ComponentType | string;
 
-    if (isHtmlTag(blueprint.type) || isRef) {
+    /**
+     * @todo
+     */
+    if (blueprint.type === '__scope__') {
+      type = Fragment;
+    } else if (isHtmlTag(blueprint.type) || isRef) {
       type = blueprint.type;
     } else {
       const componentModule = this.container.get(blueprint.type) || emptyComponentModule;

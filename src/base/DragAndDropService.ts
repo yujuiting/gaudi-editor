@@ -1,10 +1,10 @@
 import { Service } from 'typedi';
-import { filter, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
+import { Subscription, Subject } from 'rxjs';
+import { filter, switchMap, takeUntil, take } from 'rxjs/operators';
 import { Vector } from 'base/math';
 import { MouseService } from 'base/MouseService';
 import * as dom from 'base/dom';
-import { Subscription, Subject } from 'rxjs';
+import { FSM } from 'base/FSM';
 
 function filterSourceElement<T extends DragEvent | HoverEvent | DropEvent>(
   element?: HTMLElement | null
@@ -67,8 +67,17 @@ interface Dragging {
   delta: Vector;
 }
 
+enum DragState {
+  Idle,
+  Dragging,
+}
+
+interface DragStateData {
+  subscriptions: Subscription[];
+}
+
 @Service()
-export class DragAndDropService implements Initializable, Destroyable {
+export class DragAndDropService {
   private beginDrag = new Subject<DragEvent>();
 
   private stopDrag = new Subject<DragEvent>();
@@ -85,35 +94,53 @@ export class DragAndDropService implements Initializable, Destroyable {
 
   private dragging: Dragging | null = null;
 
-  private subscriptions: Subscription[] = [];
+  private control: FSM<DragState, DragStateData>;
 
-  constructor(private mouse: MouseService, initializer: InitializerService) {
-    initializer.register(this);
-  }
-
-  initialize() {
-    this.subscriptions.push(
-      this.mouse.down$
-        .pipe(
-          filter(e => this.draggables.has(e.target as HTMLElement)),
-          tap(e => this.handleBeginDrag(e)),
-          switchMap(() =>
-            this.mouse.move$.pipe(
-              tap(e => this.updateDragging(e)),
-              takeUntil(this.mouse.up$.pipe(tap(() => this.stopDragging())))
-            )
-          )
-        )
-        .subscribe()
+  constructor(mouse: MouseService) {
+    this.control = new FSM<DragState, DragStateData>(
+      [
+        {
+          name: DragState.Idle,
+          next: [DragState.Dragging],
+          onEnter: ({ data }) => {
+            data.subscriptions.push(
+              mouse.down$
+                .pipe(
+                  filter(e => this.draggables.has(e.target as HTMLElement)),
+                  switchMap(() => mouse.move$.pipe(takeUntil(mouse.up$), take(1)))
+                )
+                .subscribe(e => {
+                  this.handleBeginDrag(e);
+                  this.control.transit(DragState.Dragging);
+                })
+            );
+          },
+          onLeave: ({ data }) => {
+            data.subscriptions.forEach(s => s.unsubscribe());
+            data.subscriptions = [];
+          },
+        },
+        {
+          name: DragState.Dragging,
+          next: [DragState.Idle],
+          onEnter: ({ data }) => {
+            data.subscriptions.push(
+              mouse.move$.subscribe(e => this.updateDragging(e)),
+              mouse.up$.subscribe(() => {
+                this.stopDragging();
+                this.control.transit(DragState.Idle);
+              })
+            );
+          },
+          onLeave: ({ data }) => {
+            data.subscriptions.forEach(s => s.unsubscribe());
+            data.subscriptions = [];
+          },
+        },
+      ],
+      DragState.Idle,
+      { subscriptions: [] }
     );
-  }
-
-  destroy() {
-    for (const subscription of this.subscriptions) {
-      subscription.unsubscribe();
-    }
-
-    this.subscriptions = [];
   }
 
   registerDraggable(element: HTMLElement, config: DraggableConfig = {}) {
@@ -193,6 +220,7 @@ export class DragAndDropService implements Initializable, Destroyable {
     this.clearHover(source);
     this.onDrop(source, current);
     this.stopDrag.next(this.dragging);
+    this.dragging = null;
   }
 
   private onHover(source: Draggable, location: Vector) {
@@ -206,11 +234,17 @@ export class DragAndDropService implements Initializable, Destroyable {
   private onDrop(source: Draggable, location: Vector) {
     if (!source.type) return null;
 
+    const destinations: Droppable[] = [];
+
     for (const [destElement, destination] of this.droppables) {
       if (!destination.accepts.includes(source.type)) continue;
       const destRect = dom.getRect(destElement);
       if (destination.canDrop && !destination.canDrop(source)) continue;
-      if (destRect.contains(location)) this.drop.next({ destination, source });
+      if (destRect.contains(location)) destinations.push(destination);
+    }
+
+    for (const destination of destinations) {
+      this.drop.next({ destination, source });
     }
   }
 

@@ -1,7 +1,4 @@
 import React, { useCallback, useMemo } from 'react';
-// import { ColorChangeHandler } from 'react-color';
-// import ColorPicker from 'react-color/lib/components/chrome/Chrome';
-// import Color from 'tinycolor2';
 import * as css from 'base/css';
 import { InputWidgetProps } from 'editor/widget/type';
 import { Input, Select, Option } from 'ui/components/Form';
@@ -93,11 +90,6 @@ export const InputColor: React.FC<InputWidgetProps<string>> = props => {
     [onChange]
   );
 
-  // const onPickerChange = useCallback<ColorChangeHandler>(
-  //   color => onChange(new Color(color.rgb).toRgbString()),
-  //   [onChange]
-  // );
-  // return <ColorPicker color={value} onChange={onPickerChange} />;
   return (
     <HStack alignItems="center">
       <Input value={value} onChange={onInputChange} />

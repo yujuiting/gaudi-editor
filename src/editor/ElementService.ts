@@ -5,13 +5,12 @@ import { RenderingInfo } from 'gaudi';
 import { Initializable, Destroyable, InitializerService } from 'base/LifeCycle';
 import { Rect, Vector, Size } from 'base/math';
 import { QuadTree } from 'base/QuadTree';
-import { getRect as getRectFromHTMLElement } from 'base/dom';
+import * as dom from 'base/dom';
 import { LoggerService, Logger } from 'base/LoggerService';
 import { RectTrackerService, RectChangedEvent } from 'base/RectTrackerService';
 import { ViewportService } from 'editor/ViewportService';
 import { ViewService } from 'editor/ViewService';
-
-export const getElementId = (scope: string, blueprintId: string) => `${scope}-${blueprintId}`;
+import { ScaffoldId, ElementId } from 'base/id';
 
 interface ElementRectChangeEvent {
   type: 'element-rect-change';
@@ -22,10 +21,10 @@ interface ElementRectChangeEvent {
 export type ElementEvent = ElementRectChangeEvent;
 
 export interface Element {
-  readonly id: string;
+  readonly id: ElementId;
   readonly info: RenderingInfo;
   readonly ref: React.RefObject<HTMLElement>;
-  readonly blueprintId: string;
+  readonly scaffoldId: ScaffoldId;
 }
 
 @Service()
@@ -34,7 +33,7 @@ export class ElementService implements Initializable, Destroyable {
     return this.event.asObservable();
   }
 
-  private elements = new Map<string, Element>();
+  private elements = new Map<ElementId, Element>();
 
   private rootElements = new Set<Element>();
 
@@ -49,6 +48,8 @@ export class ElementService implements Initializable, Destroyable {
   private logger: Logger;
 
   private event = new Subject<ElementEvent>();
+
+  private requestTrackingVisiblesHandler = 0;
 
   constructor(
     private rectTracker: RectTrackerService,
@@ -73,6 +74,7 @@ export class ElementService implements Initializable, Destroyable {
       this.viewport.canvasSize$
         .pipe(debounceTime(100), distinctUntilChanged(Size.eq))
         .subscribe(this.rebuildTree.bind(this)),
+      this.rectTracker.rectChanged$.pipe(debounceTime(100)).subscribe(() => this.rebuildTree()),
       this.rectTracker.rectChanged$.subscribe(this.onRectChanged.bind(this))
     );
   }
@@ -86,32 +88,29 @@ export class ElementService implements Initializable, Destroyable {
     }
   }
 
-  add(blueprintId: string, info: RenderingInfo, ref: React.RefObject<HTMLElement>) {
-    const id = getElementId(info.scope, blueprintId);
-    const element: Element = { id, info, ref, blueprintId };
+  add(scaffoldId: ScaffoldId, info: RenderingInfo, ref: React.RefObject<HTMLElement>) {
+    const id = ElementId.create(info.scope, scaffoldId);
+    const element: Element = { id, info, ref, scaffoldId };
     this.elements.set(id, element);
     this.rects.set(element, Rect.zero);
     if (info.depth === 0) this.rootElements.add(element);
     this.tree.insert(element);
-    /**
-     * @FIXME bulk update
-     */
-    this.trackingVisibles();
+    this.trackRect(element); // we don't know whether is it visible yet
     return () => this.remove(id);
   }
 
-  remove(id: string) {
-    const element = this.elements.get(id);
-    if (element) {
-      this.rootElements.delete(element);
-      this.tree.delete(element);
-    }
+  remove(id: ElementId) {
+    const element = this.get(id);
+    this.rootElements.delete(element);
+    this.tree.delete(element);
     this.elements.delete(id);
     this.rectTracker.untrack(id);
   }
 
-  get(id: string) {
-    return this.elements.get(id);
+  get(id: ElementId) {
+    const element = this.elements.get(id);
+    if (!element) throw new Error();
+    return element;
   }
 
   getFrontest(point: Vector) {
@@ -132,11 +131,6 @@ export class ElementService implements Initializable, Destroyable {
 
   findOn(point: Vector) {
     return this.tree.findOn(point);
-  }
-
-  findByBlueprintId(scope: string, blueprintId: string) {
-    const id = getElementId(scope, blueprintId);
-    return this.get(id);
   }
 
   getBoundarySize() {
@@ -161,38 +155,49 @@ export class ElementService implements Initializable, Destroyable {
     this.viewport.setCanvasSize(this.getBoundarySize());
   }
 
-  getRect(id: string) {
-    const target = this.elements.get(id);
-    if (!target) return Rect.zero;
+  getRect(id: ElementId) {
+    const target = this.get(id);
     return this.rects.get(target) || Rect.zero;
   }
 
-  watchRect(id: string) {
+  watchRect(id: ElementId) {
     return this.event$.pipe(
       filter(e => e.type === 'element-rect-change' && e.target.id === id),
       map(e => e.rect)
     );
   }
 
-  private trackingVisibles() {
+  private requestTrackingVisibles() {
+    if (this.requestTrackingVisiblesHandler) {
+      return;
+    }
+    this.requestTrackingVisiblesHandler = window.setTimeout(() => this.trackVisibles(), 100);
+  }
+
+  private trackRect(element: Element) {
+    this.rectTracker.track(element.id, () => {
+      if (!element.ref.current) return Rect.zero;
+      const localRect = dom.getRect(element.ref.current);
+      const globalPosition = this.view.localToGlobal(element.info.scope, localRect.position);
+      return Rect.of(globalPosition, localRect.size);
+    });
+  }
+
+  private trackVisibles() {
     const visibles = this.tree.findIn(this.visibleRect);
 
     for (const [id, element] of this.elements) {
       // only tracking elements that visible, rendered and belong to current scope
       if (visibles.has(element) && element.ref) {
         if (this.rectTracker.has(id)) continue;
-        this.rectTracker.track(id, () => {
-          if (!element.ref.current) return Rect.zero;
-          const localRect = getRectFromHTMLElement(element.ref.current);
-          const globalPosition = this.view.localToGlobal(element.info.scope, localRect.position);
-          return Rect.of(globalPosition, localRect.size);
-        });
+        this.trackRect(element);
       } else {
         this.rectTracker.untrack(id);
       }
     }
 
     this.logger.trace('tracking visibles', { count: visibles.size });
+    this.requestTrackingVisiblesHandler = 0;
   }
 
   private onViewportRectChange(rect: Rect) {
@@ -200,42 +205,26 @@ export class ElementService implements Initializable, Destroyable {
     const pos = rect.position.sub(buffer.width, buffer.height);
     const size = rect.size.add(buffer.mul(2));
     this.visibleRect = Rect.of(pos, size);
-    this.trackingVisibles();
+    this.requestTrackingVisibles();
   }
 
-  private rebuildTree(size: Size) {
+  private rebuildTree(size: Size = this.viewport.getCanvasSize()) {
     this.tree = this.buildTree(size);
     this.logger.trace('rebuildTree', { size });
   }
 
   private onRectChanged({ id, rect }: RectChangedEvent) {
-    const target = this.elements.get(id as string);
-    if (!target) {
-      return;
-    }
-
-    const nodes = this.tree.findNodes(target);
-
-    // delete from tree before updating rect
-    for (const node of nodes) {
-      node.delete(target);
-    }
-
+    const target = this.elements.get(id as ElementId);
+    if (!target) return;
     this.rects.set(target, rect);
-    this.tree.insert(target);
-
-    if (target.info.depth === 0) {
-      // this.updateCanvasSize();
-    }
-
     this.event.next({ type: 'element-rect-change', target, rect });
   }
 
   private buildTree(canvasSize: Size): QuadTree<Element> {
     const rect = Rect.of(Vector.zero, canvasSize);
-    const tree = new QuadTree<Element>(rect, obj => this.rects.get(obj) || Rect.zero);
-    for (const [, ve] of this.elements) {
-      tree.insert(ve);
+    const tree = new QuadTree<Element>(rect, element => this.rects.get(element) || Rect.zero, 100);
+    for (const [, element] of this.elements) {
+      tree.insert(element);
     }
     return tree;
   }

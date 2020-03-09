@@ -1,10 +1,11 @@
-import React, { useRef, useMemo, useLayoutEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import styled from 'styled-components';
 import { Blueprint } from 'gaudi';
 import { Vector } from 'base/math';
-import * as dom from 'base/dom';
 import useDrag from 'ui/hooks/dnd/useDrag';
-import { DnDType } from 'ui/hooks/dnd/types';
+import { DnDType, BlueprintDragData } from 'ui/hooks/dnd/types';
+import useAppRoot from 'ui/hooks/useAppRoot';
 
 const Container = styled.div`
   padding: 12px;
@@ -18,34 +19,26 @@ export interface Props {
   blueprint: Blueprint;
 }
 
-function getStyle(dragging: boolean, location: Vector): React.CSSProperties {
-  if (!dragging) return { position: 'relative' };
-  return { position: 'relative', left: location.x, top: location.y };
+function getStyle(location: Vector): React.CSSProperties {
+  return { position: 'absolute', left: location.x, top: location.y };
 }
 
 const PresetBlueprint: React.FC<Props> = props => {
   const { name, blueprint } = props;
   const ref = useRef<HTMLDivElement>(null);
-  const location = useRef(Vector.zero);
+  const appRoot = useAppRoot();
   const [dragging, { current, offset }] = useDrag(ref, {
     type: DnDType.Blueprint,
-    data: blueprint,
+    data: BlueprintDragData.of(blueprint),
   });
-  const style = useMemo(() => getStyle(dragging, current.add(offset).sub(location.current)), [
-    dragging,
-    current,
-    offset,
-    location,
-  ]);
-  useLayoutEffect(() => {
-    if (!ref.current) return;
-    const rect = dom.getRect(ref.current);
-    location.current = rect.position;
-  }, [ref]);
+  const style = useMemo(() => getStyle(current.add(offset)), [current, offset]);
   return (
-    <Container style={style} ref={ref}>
-      {name}
-    </Container>
+    <>
+      <Container ref={ref}>{name}</Container>
+      {appRoot.current &&
+        dragging &&
+        createPortal(<Container style={style}>{name}</Container>, appRoot.current)}
+    </>
   );
 };
 

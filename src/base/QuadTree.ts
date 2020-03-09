@@ -179,6 +179,7 @@ export class QuadTree<T> {
 
   private insertsToChildren(value: T) {
     const rect = this.getRect(value);
+    if (rect.eq(Rect.zero)) return;
     for (const child of this.children) {
       if (!child.rect.overlaps(rect)) continue;
       child.insert(value);

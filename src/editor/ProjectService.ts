@@ -1,66 +1,63 @@
 import { Service } from 'typedi';
-import { Project, Blueprint } from 'gaudi';
-import { BlueprintService } from 'editor/BlueprintService';
-import { HistoryService } from 'editor/HistoryService';
 import { Subject } from 'rxjs';
+import { Project } from 'gaudi';
+import { noop } from 'base/function';
+import { ScopeService } from 'editor/scope/ScopeService';
+import { HistoryService } from 'editor/HistoryService';
 
-interface ProjectOpenedEvent {
-  type: 'project-opened';
-  project: Project;
+interface OpenedEvent {
+  scopeNames: string[];
 }
 
-interface ProjectCloseEvent {
-  type: 'project-closed';
-  project: Project;
-}
-
-export type ProjectEvent = ProjectOpenedEvent | ProjectCloseEvent;
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface CloseEvent {}
 
 @Service()
 export class ProjectService {
-  get event$() {
-    return this.event.asObservable();
+  get opened$() {
+    return this.opened.asObservable();
   }
 
-  private current: Project | null = null;
+  get closed$() {
+    return this.closed.asObservable();
+  }
 
-  private event = new Subject<ProjectEvent>();
+  private opened = new Subject<OpenedEvent>();
 
-  constructor(private blueprint: BlueprintService, private history: HistoryService) {}
+  private closed = new Subject<CloseEvent>();
+
+  constructor(private scope: ScopeService, private history: HistoryService) {}
 
   setCurrent(project: Project) {
-    this.current = project;
-
-    for (const name in project.blueprints) {
-      this.blueprint.import(name, project.blueprints[name]);
+    const scopeNames: string[] = [];
+    for (const scopeName in project.blueprints) {
+      scopeNames.push(scopeName);
+      this.scope.create(scopeName, project.blueprints[scopeName]);
     }
 
     this.history.reset();
+    // just for display
     this.history.push({
       label: 'Open project',
-      do: () => this.blueprint.setEntry(project.entry),
+      do: noop,
       undo: () => {
         throw new Error('cannot undo this command');
       },
       undoable: true,
     });
 
-    this.event.next({ type: 'project-opened', project: this.getCurrent() });
+    this.opened.next({ scopeNames });
   }
 
   getCurrent() {
-    if (!this.current) throw new Error();
-
-    const scopes = this.blueprint.getScopes();
-    const blueprints: Record<string, Blueprint> = {};
-
-    for (const scope of scopes) {
-      blueprints[scope] = this.blueprint.getRoot(scope)!;
-    }
-
     const project: Project = {
-      ...this.current,
-      blueprints,
+      blueprints: this.scope.extractAll(),
+      entry: this.scope.getEntry(),
+      metadata: {
+        plugins: [],
+        version: '',
+      },
+      data: {},
     };
 
     return project;

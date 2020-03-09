@@ -1,12 +1,13 @@
 import { Children, isValidElement, cloneElement, useRef, useEffect, forwardRef } from 'react';
 import { RenderingInfo } from 'gaudi';
-import { MutableBlueprint } from 'editor/BlueprintService';
+import { BlueprintEx } from 'editor/scaffold/types';
 import { ElementService } from 'editor/ElementService';
 import { useMethod } from 'editor/di';
+import { ScaffoldId } from 'base/id';
 
 export interface Props {
   info: RenderingInfo;
-  blueprint: MutableBlueprint;
+  blueprint: BlueprintEx;
 }
 
 const Scaffold = forwardRef<HTMLElement, Props>(({ children, info, blueprint }, ref) => {
@@ -16,7 +17,11 @@ const Scaffold = forwardRef<HTMLElement, Props>(({ children, info, blueprint }, 
 
   const innerRef = useRef<HTMLElement>(null);
 
-  useEffect(() => add(blueprint.id, info, innerRef), [add, blueprint, info, innerRef]);
+  useEffect(() => {
+    // we inject id to blueprint when extract blueprint from scaffold
+    const id = ScaffoldId.create(blueprint.id);
+    return add(id, info, innerRef);
+  }, [add, blueprint, info, innerRef]);
 
   useEffect(() => {
     if (ref === null) return;

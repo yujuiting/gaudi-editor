@@ -1,9 +1,10 @@
 import React from 'react';
+import { ScaffoldId } from 'base/id';
 import { PropMetadata } from 'editor/type';
 import { useMethodCall } from 'editor/di';
+import { WidgetService } from 'editor/widget/WidgetService';
 import { Field, Label } from 'ui/components/Form';
 import useProp from 'ui/hooks/useProp';
-import { WidgetService } from 'editor/widget/WidgetService';
 
 function getLabel(propKey: string) {
   return propKey
@@ -14,19 +15,19 @@ function getLabel(propKey: string) {
 export interface PropEditorProps {
   propKey: string;
   metadata: PropMetadata;
-  blueprintId: string;
+  scaffoldId: ScaffoldId;
 }
 
 const PropEditor: React.FC<PropEditorProps> = props => {
   const {
-    blueprintId,
+    scaffoldId,
     propKey,
     metadata: { type, defaultValue, options, label },
   } = props;
 
   const inputWidget = useMethodCall(WidgetService, 'getInputWidget', [type]);
 
-  const [value, setValue] = useProp(blueprintId, propKey);
+  const [value, setValue] = useProp(scaffoldId, propKey);
 
   function renderInput() {
     if (!inputWidget) return `unknown input type: ${type}`;

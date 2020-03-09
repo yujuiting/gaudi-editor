@@ -1,10 +1,18 @@
 import React from 'react';
 import styled from 'styled-components';
 import * as theme from 'base/theme';
-import { useMethodCall, useMethod } from 'editor/di';
-import { BlueprintService, ImmutableBlueprint } from 'editor/BlueprintService';
-import Layer from './Layer';
+import { ReadonlyNode } from 'base/Node';
+import { ScaffoldId } from 'base/id';
+import { useMethod, useMethodCall, useProperty } from 'editor/di';
 import { EditorStateService } from 'editor/EditorStateService';
+import { ScopeService, filterScopeName, mapToScope } from 'editor/scope/ScopeService';
+import { ScaffoldService } from 'editor/scaffold/ScaffoldService';
+
+import Layer from './Layer';
+import { useObservable } from 'rxjs-hooks';
+import { filter, map, debounceTime } from 'rxjs/operators';
+import { merge } from 'rxjs';
+import { useObserver } from 'ui/hooks/useUpdater';
 
 const Container = styled.div``;
 
@@ -14,27 +22,51 @@ const Name = styled.div`
   background-color: ${theme.get('component.input.hovered.background')};
 `;
 
+function useScope(scopeName: string) {
+  const initial = useMethodCall(ScopeService, 'get', [scopeName]);
+  const updated$ = useProperty(ScopeService, 'updated$');
+  return useObservable(() => updated$.pipe(filterScopeName(scopeName), mapToScope()), initial);
+}
+
+function useNode(id: ScaffoldId) {
+  const getNode = useMethod(ScaffoldService, 'getNode', [id]);
+  const relationCreated$ = useProperty(ScaffoldService, 'relationCreated$');
+  const relationDestroyed$ = useProperty(ScaffoldService, 'relationDestroyed$');
+  return (
+    useObserver(
+      () =>
+        merge(relationCreated$, relationDestroyed$).pipe(
+          filter(e => e.id === id || e.parentId === id),
+          debounceTime(100),
+          map(() => getNode())
+        ),
+      [id]
+    ) || getNode()
+  );
+}
+
 export interface ScopeProps {
-  scope: string;
+  scopeName: string;
 }
 
 const Scope: React.FC<ScopeProps> = props => {
-  const { scope } = props;
-  const blueprint = useMethodCall(BlueprintService, 'getRoot', [scope]);
-  const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
+  const { scopeName } = props;
+  const scope = useScope(scopeName);
+  const node = useNode(scope.root);
+  const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scopeName]);
 
-  function renderLayer(blueprint: ImmutableBlueprint) {
+  function renderLayer(node: ReadonlyNode<ScaffoldId>) {
     return (
-      <Layer key={blueprint.id} scope={scope} blueprintId={blueprint.id}>
-        {blueprint.children.map(renderLayer)}
+      <Layer key={node.value.toString()} scopeName={scopeName} scaffoldId={node.value}>
+        {node.children.map(renderLayer)}
       </Layer>
     );
   }
 
   return (
     <Container>
-      <Name onClick={selectScope}>{scope}</Name>
-      {renderLayer(blueprint)}
+      <Name onClick={selectScope}>{scopeName}</Name>
+      {renderLayer(node)}
     </Container>
   );
 };

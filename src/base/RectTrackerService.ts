@@ -22,6 +22,10 @@ export class RectTrackerService implements Initializable, Destroyable {
     return this.rectChanged.asObservable();
   }
 
+  get tickCostTime$() {
+    return this.tickCostTime.asObservable();
+  }
+
   private handle = 0;
 
   private trackings = new Map<unknown, TrackingData>();
@@ -35,6 +39,10 @@ export class RectTrackerService implements Initializable, Destroyable {
   private requestIdleCallbackOptions: RequestIdleCallbackOptions = { timeout: 20 };
 
   private logger: Logger;
+
+  private lastTickTime = 0;
+
+  private tickCostTime = new Subject<number>();
 
   constructor(logger: LoggerService, initializer: InitializerService) {
     this.logger = logger.create('RectTracker');
@@ -112,6 +120,10 @@ export class RectTrackerService implements Initializable, Destroyable {
 
   private updateAll(deadline: RequestIdleCallbackDeadline) {
     if (this.waitings.length === 0) {
+      if (this.lastTickTime !== 0) {
+        this.tickCostTime.next(performance.now() - this.lastTickTime);
+      }
+      this.lastTickTime = performance.now();
       this.waitings = Array.from(this.trackings.entries());
     }
 

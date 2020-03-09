@@ -3,11 +3,11 @@ import { RendererService } from 'editor/RendererService';
 import { useMethod } from 'editor/di';
 
 export interface Props {
-  scope: string;
+  scopeName: string;
 }
 
-const Blueprint: React.FC<Props> = props => {
-  const { scope } = props;
+const Scope: React.FC<Props> = props => {
+  const { scopeName } = props;
 
   const [, update] = useReducer(c => c + 1, 0);
 
@@ -16,11 +16,11 @@ const Blueprint: React.FC<Props> = props => {
   const watch = useMethod(RendererService, 'watch');
 
   useEffect(() => {
-    const subscription = watch(scope).subscribe(() => update());
+    const subscription = watch(scopeName).subscribe(() => update());
     return () => subscription.unsubscribe();
-  }, [watch, scope]);
+  }, [watch, scopeName]);
 
-  return <>{getElement(scope)}</>;
+  return <>{getElement(scopeName)}</>;
 };
 
-export default Blueprint;
+export default Scope;

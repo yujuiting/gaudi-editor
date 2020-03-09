@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Subscription } from 'rxjs';
 import { Rect } from 'base/math';
+import { ElementId } from 'base/id';
 import { useMethod } from 'editor/di';
 import { ElementService } from 'editor/ElementService';
 
-export function useElementRects(ids: string[]) {
+export function useElementRects(ids: ElementId[]) {
   const getRect = useMethod(ElementService, 'getRect');
   const watchRect = useMethod(ElementService, 'watchRect');
   const [rects, setRects] = useState<Rect[]>([]);

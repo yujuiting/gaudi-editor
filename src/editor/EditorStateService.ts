@@ -5,6 +5,7 @@ import { MouseService } from 'base/MouseService';
 import { ViewportService, ControlState, mapMouseEventToCanvasPoint } from 'editor/ViewportService';
 import { ElementService } from 'editor/ElementService';
 import { KeybindingService } from 'base/KeybindingService';
+import { ElementId } from 'base/id';
 
 @Service()
 export class EditorStateService {
@@ -20,9 +21,9 @@ export class EditorStateService {
     return this.currentScope.asObservable();
   }
 
-  private hovered = new BehaviorSubject<string | undefined>(undefined);
+  private hovered = new BehaviorSubject<ElementId | undefined>(undefined);
 
-  private selected = new BehaviorSubject<string[]>([]);
+  private selected = new BehaviorSubject<ElementId[]>([]);
 
   private currentScope = new BehaviorSubject<string | undefined>(undefined);
 
@@ -69,8 +70,8 @@ export class EditorStateService {
     return this.hovered.value;
   }
 
-  addSelected(elementId: string) {
-    const target = this.element.get(elementId);
+  addSelected(id: ElementId) {
+    const target = this.element.get(id);
     if (!target) return;
     // multiple selection only support in same scope
     if (target.info.scope !== this.getCurrentScope()) {
@@ -78,29 +79,29 @@ export class EditorStateService {
     }
     const currentSelected = this.getSelected();
     // prevent select repeatly
-    if (currentSelected.find(objectId => objectId === elementId)) return;
-    this.selected.next([...currentSelected, elementId]);
+    if (currentSelected.find(objectId => objectId === id)) return;
+    this.selected.next([...currentSelected, id]);
     this.setCurrentScope(target.info.scope);
   }
 
-  setSelected(elementId: string) {
-    const target = this.element.get(elementId);
+  setSelected(id: ElementId) {
+    const target = this.element.get(id);
     if (!target) return;
-    this.selected.next([elementId]);
+    this.selected.next([id]);
     this.setCurrentScope(target.info.scope);
   }
 
-  select(elementId: string) {
+  select(id: ElementId) {
     if (this.multipleSelecting) {
-      this.addSelected(elementId);
+      this.addSelected(id);
     } else {
-      this.setSelected(elementId);
+      this.setSelected(id);
     }
   }
 
-  removeSelected(elementId: string) {
+  removeSelected(id: ElementId) {
     const selected = this.getSelected();
-    const index = selected.findIndex(objectId => objectId === elementId);
+    const index = selected.indexOf(id);
     if (index < 0) return;
     this.selected.next([...selected.slice(0, index), ...selected.slice(index + 1)]);
   }

@@ -2,6 +2,7 @@ import { Service } from 'typedi';
 import { BehaviorSubject } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 import { KeybindingService } from 'base/KeybindingService';
+import { Logger, LoggerService } from 'base/LoggerService';
 
 interface Command {
   label: string;
@@ -61,7 +62,11 @@ export class HistoryService {
 
   private current = new BehaviorSubject(-1);
 
-  constructor(keybinding: KeybindingService) {
+  private logger: Logger;
+
+  constructor(keybinding: KeybindingService, logger: LoggerService) {
+    this.logger = logger.create('HistoryService');
+
     keybinding.define({
       id: 'edit.undo',
       parts: ['Meta', 'KeyZ'],
@@ -147,7 +152,8 @@ export class HistoryService {
       this.doCommand(command);
       this.current.next(this.current.value + 1);
       return true;
-    } catch {
+    } catch (error) {
+      this.logger.error('redo fail', { error });
       return false;
     }
   }
@@ -161,7 +167,8 @@ export class HistoryService {
       this.undoCommand(command);
       this.current.next(this.current.value - 1);
       return true;
-    } catch {
+    } catch (error) {
+      this.logger.error('undo fail', { error });
       return false;
     }
   }

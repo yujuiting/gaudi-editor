@@ -1,16 +1,19 @@
 import React, { useRef, useEffect, useMemo, useCallback } from 'react';
+import { merge } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { useObservable } from 'rxjs-hooks';
 import { Vector, Size } from 'base/math';
-import { useProperty$, useMethod, useMethodCall } from 'editor/di';
+import { useProperty$, useMethod, useProperty } from 'editor/di';
 import { ViewportService, ControlState } from 'editor/ViewportService';
-import { BlueprintService } from 'editor/BlueprintService';
-import useViewRect from 'ui/hooks/useViewRect';
-import { Viewport, Canvas, View } from './components';
-import IsolatedView from './IsolatedView';
-import Blueprint from './Blueprint';
-import { HighlightHovered, HighlightSelected } from './HighlightRect';
 import { EditorStateService } from 'editor/EditorStateService';
-import useResizer from 'ui/hooks/resize/useResizer';
 import { ViewService } from 'editor/ViewService';
+import { ScopeService } from 'editor/scope/ScopeService';
+import useViewRect from 'ui/hooks/useViewRect';
+import IsolatedView from 'ui/components/IsolatedView';
+import { HighlightHovered, HighlightSelected } from './HighlightRect';
+import useResizer from 'ui/hooks/resize/useResizer';
+import { Viewport, Canvas, View } from './components';
+import Scope from './Scope';
 
 const getCursor = (state: ControlState) => {
   switch (state) {
@@ -28,9 +31,11 @@ const getCursor = (state: ControlState) => {
   }
 };
 
-function useScopes() {
-  useProperty$(BlueprintService, 'updateEvent$');
-  return useMethodCall(BlueprintService, 'getScopes', []);
+function useScopeNames() {
+  const created$ = useProperty(ScopeService, 'created$');
+  const destroyed$ = useProperty(ScopeService, 'destroyed$');
+  const getNames = useMethod(ScopeService, 'getNames');
+  return useObservable(() => merge(created$, destroyed$).pipe(map(() => getNames())), getNames());
 }
 
 const ConnectedViewport: React.FC = () => {
@@ -57,7 +62,7 @@ const ConnectedViewport: React.FC = () => {
     [scale, location, canvasSize]
   );
 
-  const scopes = useScopes();
+  const scopeNames = useScopeNames();
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -66,13 +71,13 @@ const ConnectedViewport: React.FC = () => {
     return () => unbindRef();
   }, [viewportRef, bindRef, unbindRef]);
 
-  function renderView(scope: string) {
-    return <ConnectedView key={scope} scope={scope} />;
+  function renderView(scopeName: string) {
+    return <ConnectedView key={scopeName} scopeName={scopeName} />;
   }
 
   return (
     <Viewport ref={viewportRef} cursor={getCursor(controlState)}>
-      <Canvas style={canvasStyle}>{scopes.map(renderView)}</Canvas>
+      <Canvas style={canvasStyle}>{scopeNames.map(renderView)}</Canvas>
       <HighlightSelected />
       <HighlightHovered />
     </Viewport>
@@ -80,18 +85,18 @@ const ConnectedViewport: React.FC = () => {
 };
 
 interface ConnectedViewProps {
-  scope: string;
+  scopeName: string;
 }
 
 const ConnectedView: React.FC<ConnectedViewProps> = props => {
-  const { scope } = props;
-  const [rect] = useViewRect(scope);
-  const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scope]);
+  const { scopeName } = props;
+  const [rect] = useViewRect(scopeName);
+  const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scopeName]);
   const resize = useMethod(ViewService, 'resize');
   const move = useMethod(ViewService, 'move');
-  const onResize = useCallback((s: Size) => resize(scope, s), [scope, resize]);
-  const onMove = useCallback((v: Vector) => move(scope, v), [scope, move]);
-  const renderControllers = useResizer({ id: scope, group: 'view', onResize, onMove });
+  const onResize = useCallback((s: Size) => resize(scopeName, s), [scopeName, resize]);
+  const onMove = useCallback((v: Vector) => move(scopeName, v), [scopeName, move]);
+  const renderControllers = useResizer({ id: scopeName, group: 'view', onResize, onMove });
 
   return (
     <View
@@ -102,7 +107,7 @@ const ConnectedView: React.FC<ConnectedViewProps> = props => {
       onClick={selectScope}
     >
       <IsolatedView disablePointerEvent>
-        <Blueprint scope={scope} />
+        <Scope scopeName={scopeName} />
       </IsolatedView>
       {renderControllers()}
     </View>

@@ -1,17 +1,12 @@
-import { switchMap, startWith } from 'rxjs/operators';
-import { useObservable } from 'rxjs-hooks';
-import { Rect } from 'base/math';
+import { ElementId } from 'base/id';
 import { useMethod } from 'editor/di';
 import { ElementService } from 'editor/ElementService';
+import { useObserver } from './useUpdater';
 
-function useElementRect(id: string) {
-  const getRect = useMethod(ElementService, 'getRect');
+function useElementRect(id: ElementId) {
+  const getRect = useMethod(ElementService, 'getRect', [id]);
   const watchRect = useMethod(ElementService, 'watchRect');
-  return useObservable<Rect, [string]>(
-    inputs$ => inputs$.pipe(switchMap(([id]) => watchRect(id).pipe(startWith(getRect(id))))),
-    Rect.zero,
-    [id]
-  );
+  return useObserver(() => watchRect(id), [id]) || getRect();
 }
 
 export default useElementRect;
