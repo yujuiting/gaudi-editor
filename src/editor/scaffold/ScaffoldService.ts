@@ -99,7 +99,7 @@ export class ScaffoldService {
     const node = this.getMutableNode(id);
     const parent = this.getMutableNode(parentId);
     const index = parent.children.indexOf(node);
-    if (index < 0) return;
+    if (index < 0) return false;
     parent.removeChild(node);
     this.relationDestroyed.next({ id, parentId, at: index });
     return true;

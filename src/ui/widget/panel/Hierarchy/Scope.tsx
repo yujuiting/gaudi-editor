@@ -9,6 +9,7 @@ import { ScopeService, filterScopeName, mapToScope } from 'editor/scope/ScopeSer
 import { ScaffoldService } from 'editor/scaffold/ScaffoldService';
 
 import Layer from './Layer';
+import Placeholder from './Placeholder';
 import { useObservable } from 'rxjs-hooks';
 import { filter, map, debounceTime } from 'rxjs/operators';
 import { merge } from 'rxjs';
@@ -55,12 +56,32 @@ const Scope: React.FC<ScopeProps> = props => {
   const node = useNode(scope.root);
   const selectScope = useMethod(EditorStateService, 'setCurrentScope', [scopeName]);
 
-  function renderLayer(node: ReadonlyNode<ScaffoldId>) {
-    return (
+  function renderLayer(
+    node: ReadonlyNode<ScaffoldId>,
+    parent: ReadonlyNode<ScaffoldId> | null = null,
+    index = 0
+  ) {
+    const elements = [
       <Layer key={node.value.toString()} scopeName={scopeName} scaffoldId={node.value}>
-        {node.children.map(renderLayer)}
-      </Layer>
-    );
+        {node.children.map((child, index) => renderLayer(child, node, index))}
+      </Layer>,
+    ];
+
+    if (parent && index === 0)
+      elements.unshift(
+        <Placeholder key={`${parent.value.toString()}-0`} scaffoldId={parent.value} at={0} />
+      );
+
+    if (parent)
+      elements.push(
+        <Placeholder
+          key={`${parent.value.toString()}-${index + 1}`}
+          scaffoldId={parent.value}
+          at={index + 1}
+        />
+      );
+
+    return elements;
   }
 
   return (

@@ -1,5 +1,5 @@
 import { Service } from 'typedi';
-import { map, filter, tap } from 'rxjs/operators';
+import { map, filter } from 'rxjs/operators';
 import { JSONValue, Blueprint } from 'gaudi';
 import { HistoryService } from 'editor/HistoryService';
 import { ScaffoldService } from 'editor/scaffold/ScaffoldService';
@@ -38,7 +38,6 @@ export class OperatorService {
 
   watchProp<T extends JSONValue>(id: ScaffoldId, key: string) {
     return this.scaffold.propUpdated$.pipe(
-      tap(e => console.log('watch', e)),
       filter(e => e.id.eq(id) && e.key === key),
       map(e => e.value as T)
     );
@@ -98,11 +97,14 @@ export class OperatorService {
 
   move(id: ScaffoldId, newParentId: ScaffoldId, at: number) {
     const oldParent = this.scaffold.getParent(id);
+    const isBackwardInsert = oldParent.id.eq(newParentId) && oldParent.at < at;
     this.history.push({
       label: 'Move child',
       do: () => {
         this.scaffold.destroyRelation(id, oldParent.id);
-        this.scaffold.createRelation(id, newParentId, at);
+        // expected index maybe different after destroyed relation
+        const fixedAt = isBackwardInsert ? at - 1 : at;
+        this.scaffold.createRelation(id, newParentId, fixedAt);
       },
       undo: () => {
         this.scaffold.destroyRelation(id, newParentId);

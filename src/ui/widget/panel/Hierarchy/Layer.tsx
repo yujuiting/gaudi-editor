@@ -2,23 +2,24 @@ import React, { useMemo, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import styled, { css } from 'styled-components';
 import * as theme from 'base/theme';
-import { DropEvent, Draggable, HoverEvent } from 'base/DragAndDropService';
+import { Vector } from 'base/math';
+import { ScaffoldId, ElementId } from 'base/id';
+import { DropEvent, HoverEvent } from 'base/DragAndDropService';
 import { useMethod, useMethodCall } from 'editor/di';
 import { EditorStateService } from 'editor/EditorStateService';
+import { OperatorService } from 'editor/OperatorService';
+import { ScaffoldService } from 'editor/scaffold/ScaffoldService';
 import useSelected from 'ui/hooks/useSelected';
 import useDrag from 'ui/hooks/dnd/useDrag';
 import useDrop from 'ui/hooks/dnd/useDrop';
+import useAppRoot from 'ui/hooks/useAppRoot';
+import useCanDrop from 'ui/hooks/useCanDrop';
 import {
   DnDType,
   isBlueprintDragData,
   isScaffoldDragData,
   ScaffoldDragData,
 } from 'ui/hooks/dnd/types';
-import useAppRoot from 'ui/hooks/useAppRoot';
-import { Vector } from 'base/math';
-import { OperatorService } from 'editor/OperatorService';
-import { ScaffoldService } from 'editor/scaffold/ScaffoldService';
-import { ScaffoldId, ElementId } from 'base/id';
 
 const Container = styled.div``;
 
@@ -54,26 +55,6 @@ const Children = styled.div`
 `;
 
 const accepts = [DnDType.Scaffold, DnDType.Blueprint];
-
-function useCanDrop(id: ScaffoldId) {
-  const getType = useMethod(ScaffoldService, 'getType');
-  const canInsertChild = useMethod(ScaffoldService, 'canInsertChild');
-  const canDrop = useCallback(
-    (source: Draggable) => {
-      let blueprintType: string;
-      if (isBlueprintDragData(source.data)) {
-        blueprintType = source.data.blueprint.type;
-      } else if (isScaffoldDragData(source.data)) {
-        blueprintType = getType(source.data.id);
-      } else {
-        return false;
-      }
-      return canInsertChild(id, blueprintType);
-    },
-    [canInsertChild, getType, id]
-  );
-  return canDrop;
-}
 
 function useOnDrop(id: ScaffoldId) {
   const append = useMethod(OperatorService, 'append');
@@ -126,12 +107,12 @@ function useDragLayer(ref: React.RefObject<HTMLElement>, scaffoldId: ScaffoldId)
   return [dragging, style] as const;
 }
 
-export interface LayerProps {
+export interface Props {
   scopeName: string;
   scaffoldId: ScaffoldId;
 }
 
-const Layer: React.FC<LayerProps> = props => {
+const Layer: React.FC<Props> = props => {
   const { scopeName, scaffoldId, children } = props;
   const appRoot = useAppRoot();
   const elementId = useMemo(() => ElementId.create(scopeName, scaffoldId), [scopeName, scaffoldId]);
