@@ -67,75 +67,28 @@ export interface HighlightProps {
   rect: Rect;
   thickness?: number;
   type: 'selected' | 'hovered';
+  dndHovered?: boolean;
 }
 
-const HighlightRectWrapper = styled.div<{ color: string }>`
-  > div {
-    position: absolute;
-    background-color: ${props => props.color};
-  }
-`;
-
-export const HighlightRect: React.FC<HighlightProps> = ({ rect, thickness = 1, type }) => {
-  const theme = useContext(ThemeContext);
-
-  const color = useMemo(() => {
-    switch (type) {
+export const HighlightRect = styled.div<HighlightProps>`
+  ${props => {
+    let color = 'red';
+    switch (props.type) {
       case 'hovered':
-        return theme['viewport.hovered.color'];
+        color = props.theme['viewport.hovered.color'];
+        break;
       case 'selected':
-        return theme['viewport.selected.color'];
-      default:
-        return 'red';
+        color = props.theme['viewport.selected.color'];
+        break;
     }
-  }, [theme, type]);
-
-  const top = useMemo<React.CSSProperties>(
-    () => ({
-      left: rect.position.x,
-      top: rect.position.y - thickness,
-      width: rect.size.width,
-      height: thickness,
-    }),
-    [rect, thickness]
-  );
-
-  const left = useMemo<React.CSSProperties>(
-    () => ({
-      left: rect.position.x - thickness,
-      top: rect.position.y,
-      width: thickness,
-      height: rect.size.height,
-    }),
-    [rect, thickness]
-  );
-
-  const bottom = useMemo<React.CSSProperties>(
-    () => ({
-      left: rect.position.x,
-      top: rect.position.y + rect.size.height,
-      width: rect.size.width,
-      height: thickness,
-    }),
-    [rect, thickness]
-  );
-
-  const right = useMemo<React.CSSProperties>(
-    () => ({
-      left: rect.position.x + rect.size.width,
-      top: rect.position.y,
-      width: thickness,
-      height: rect.size.height,
-    }),
-    [rect, thickness]
-  );
-
-  return (
-    <HighlightRectWrapper color={color}>
-      <div style={top} />
-      <div style={left} />
-      <div style={bottom} />
-      <div style={right} />
-    </HighlightRectWrapper>
-  );
-};
+    return css`
+      border: ${props.thickness || 1}px solid ${color};
+      background-color: ${props.dndHovered ? color : 'none'};
+    `;
+  }}
+  position: absolute;
+  left: ${props => props.rect.position.x}px;
+  top: ${props => props.rect.position.y}px;
+  width: ${props => props.rect.size.width}px;
+  height: ${props => props.rect.size.height}px;
+`;
