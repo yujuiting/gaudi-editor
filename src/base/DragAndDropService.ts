@@ -224,23 +224,31 @@ export class DragAndDropService {
   }
 
   private onHover(source: Draggable, location: Vector) {
-    for (const [destElement, destination] of this.droppables) {
-      const destRect = dom.getRect(destElement);
-      const hovered = destRect.contains(location);
-      this.hover.next({ destination, source, hovered });
-    }
-  }
-
-  private onDrop(source: Draggable, location: Vector) {
-    if (!source.type) return null;
+    if (!source.type) return;
 
     const destinations: Droppable[] = [];
 
     for (const [destElement, destination] of this.droppables) {
       if (!destination.accepts.includes(source.type)) continue;
-      const destRect = dom.getRect(destElement);
+      if (!dom.getRect(destElement).contains(location)) continue;
+      destinations.push(destination);
+    }
+
+    for (const destination of destinations) {
+      this.hover.next({ destination, source, hovered: true });
+    }
+  }
+
+  private onDrop(source: Draggable, location: Vector) {
+    if (!source.type) return;
+
+    const destinations: Droppable[] = [];
+
+    for (const [destElement, destination] of this.droppables) {
+      if (!destination.accepts.includes(source.type)) continue;
+      if (!dom.getRect(destElement).contains(location)) continue;
       if (destination.canDrop && !destination.canDrop(source)) continue;
-      if (destRect.contains(location)) destinations.push(destination);
+      destinations.push(destination);
     }
 
     for (const destination of destinations) {
@@ -249,6 +257,9 @@ export class DragAndDropService {
   }
 
   private clearHover(source: Draggable) {
+    /**
+     * @todo prevent fire redundant events for those unhovered objects
+     */
     for (const [, destination] of this.droppables) {
       this.hover.next({ destination, source, hovered: false });
     }

@@ -24,11 +24,13 @@ function useDrop(
   }, [ref, register, accepts, canDrop]);
 
   useLayoutEffect(() => {
+    if (!ref.current) return;
     const subscription = observeHover(ref.current).subscribe(onHover);
     return () => subscription.unsubscribe();
   }, [observeHover, onHover, ref]);
 
   useLayoutEffect(() => {
+    if (!ref.current) return;
     const subscription = observeDrop(ref.current).subscribe(onDrop);
     return () => subscription.unsubscribe();
   }, [observeDrop, onDrop, ref]);

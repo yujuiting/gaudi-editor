@@ -1,4 +1,4 @@
-import { useCallback, useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { DragAndDropService, DragEvent, DraggableConfig } from 'base/DragAndDropService';
 import { useMethod } from 'editor/di';
 import { Vector } from 'base/math';
@@ -18,11 +18,6 @@ function useDrag(ref: React.RefObject<HTMLElement>, { type, data }: DraggableCon
     diff: Vector.zero,
     delta: Vector.zero,
   });
-  const handleDragEvent = useCallback((e: DragEvent, dragging: boolean) => {
-    const { initial, offset, current, diff, delta } = e;
-    setDragging(dragging);
-    setDragInfo({ initial, offset, current, diff, delta });
-  }, []);
 
   useLayoutEffect(() => {
     if (!ref.current) return;
@@ -30,13 +25,22 @@ function useDrag(ref: React.RefObject<HTMLElement>, { type, data }: DraggableCon
   }, [ref, register, type, data]);
 
   useLayoutEffect(() => {
+    if (!ref.current) return;
+
+    const handleDragEvent = (e: DragEvent, dragging: boolean) => {
+      const { initial, offset, current, diff, delta } = e;
+      setDragging(dragging);
+      setDragInfo({ initial, offset, current, diff, delta });
+    };
+
     const subscriptions = [
       observeBeginDrag(ref.current).subscribe(e => handleDragEvent(e, true)),
       observeDrag(ref.current).subscribe(e => handleDragEvent(e, true)),
       observeStopDrag(ref.current).subscribe(e => handleDragEvent(e, false)),
     ];
+
     return () => subscriptions.forEach(s => s.unsubscribe());
-  }, [observeBeginDrag, observeStopDrag, observeDrag, handleDragEvent, ref]);
+  }, [observeBeginDrag, observeStopDrag, observeDrag, ref]);
 
   return [dragging, dragInfo] as const;
 }

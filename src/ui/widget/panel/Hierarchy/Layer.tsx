@@ -14,6 +14,7 @@ import useDrag from 'ui/hooks/dnd/useDrag';
 import useDrop from 'ui/hooks/dnd/useDrop';
 import useAppRoot from 'ui/hooks/useAppRoot';
 import useCanDrop from 'ui/hooks/useCanDrop';
+import useElementId from 'ui/hooks/useElementId';
 import {
   DnDType,
   isBlueprintDragData,
@@ -115,10 +116,10 @@ export interface Props {
 const Layer: React.FC<Props> = props => {
   const { scopeName, scaffoldId, children } = props;
   const appRoot = useAppRoot();
-  const elementId = useMemo(() => ElementId.create(scopeName, scaffoldId), [scopeName, scaffoldId]);
+  const ref = useRef<HTMLDivElement>(null);
+  const elementId = useElementId(scopeName, scaffoldId);
   const selected = useSelected();
   const select = useMethod(EditorStateService, 'select', [elementId]);
-  const ref = useRef<HTMLDivElement>(null);
   const hovered = useDropLayer(ref, scaffoldId);
   const [dragging, style] = useDragLayer(ref, scaffoldId);
   const blueprintType = useMethodCall(ScaffoldService, 'getType', [scaffoldId]);

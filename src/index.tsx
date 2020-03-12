@@ -12,11 +12,9 @@ import widgets from './widgets';
 import App from './App';
 import { EditorPlugin } from 'plugins/EditorPlugin';
 import * as serviceWorker from './serviceWorker';
+import { StandardPlugin } from 'plugins/standard-plugin/StandardPlugin.dev';
 import { PanelService } from 'editor/widget/PanelService';
 import { EditorService } from 'editor/EditorService';
-
-import * as StackModule from 'components/Stack.gaudi';
-import * as TextModule from 'components/Text.gaudi';
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
@@ -24,8 +22,7 @@ import * as TextModule from 'components/Text.gaudi';
 serviceWorker.unregister();
 
 const gaudi = new Gaudi({
-  componentModules: [StackModule, TextModule],
-  plugins: [new EditorPlugin()],
+  plugins: [new StandardPlugin(), new EditorPlugin()],
 });
 const editor = Container.get(EditorService);
 const mouse = Container.get(MouseService);
